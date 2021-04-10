@@ -1,0 +1,268 @@
+<HTML>
+<head>
+<style>
+body{
+	background-color: grey
+}
+#error_messages{color: #CC0000;}
+</style>
+</head>
+<body>
+<h1>Standardized Personalization Demonstration</h1>
+
+<p>NAME:</p>
+<input id="name" type="text" maxlength="30" size="30" >
+<!--https://stackoverflow.com/a/13607485    perhaps overly restrictive   also doesn't work with copy and pasting-->
+<p>Alphanumerics and basic punctuation only.</p>
+<br>
+<p>DATE:</p>
+<select id="booktype" onchange="book_type();pop_year()">
+	<option value="typeofbook">type of book</option>
+	<option value="bday">birthday/anniversary</option>
+	<option value="sday">special day</option>
+</select>
+
+<select id="year" onchange="pop_month()">
+	<option value="year">year</option>
+</select>
+
+<select id="month" onchange="pop_day()">
+	<option value="month">month</option>
+</select>
+
+<select id="day">
+	<option value="day">day</option>
+</select>
+
+<br><br>
+
+<button id="submit" onclick="verify()">
+	submit
+</button>
+<p id="output"></p>
+<p id="error_messages"></p>
+
+<script>
+var selected_book = "default";
+function book_type(){
+	if(document.getElementById("booktype").value=="sday"){
+		selected_book = "sday"; //console.log("special day");
+	}
+	else if(document.getElementById("booktype").value=="bday"){
+		selected_book = "bday"; //console.log("birthday");
+	}
+	else{
+		selected_book = "DEFAULT"; //console.log("do nothing");
+	}
+}
+
+/////////////////////
+
+//generate drop down from array
+//https://stackoverflow.com/questions/9895082/javascript-populate-drop-down-list-with-array
+
+//populate year drop down from 1910 to current year OR current year - 20
+var option_year = document.getElementById("year");
+var current_year = new Date().getFullYear();
+
+function pop_year(){ //var time = performance.now();
+	for(j=0;j<7;j++){
+		for(i=1;i<=108;i++){ 
+			option_year.remove(i); //console.log(i);
+		}
+	}
+	
+	if(selected_book=="sday"){
+		overused_loop(1910,current_year,option_year);
+	}
+	else if(selected_book=="bday"){
+		overused_loop(1910,current_year-20,option_year);
+	}
+	else{
+		for(j=0;j<7;j++){
+			for(i=1;i<=108;i++){
+				option_year.remove(i); //console.log(i);
+			}
+		}
+	} //timenow = performance.now()-time; console.log("pop_year took: " + timenow.toString() + " ms to run");
+	pop_month();
+}
+/////////////////////
+
+//populate month based on year picked
+var current_month = (new Date().getMonth())+1;
+var option_month = document.getElementById("month");
+var selected_year;
+//console.log(selected_year);
+
+function pop_month(){ //runs when year is selected //var time = performance.now();
+//https://www.w3schools.com/jsref/event_onchange.asp
+
+	//remove method to clear old months dropdown
+	for(j=0;j<4;j++){ //I have no clue why this has to be here. Without it it only deletes every other option //number of loops is based on 2^x because logaritms or something
+		for(i=1;i<=12;i++){ //https://stackoverflow.com/questions/7601691/remove-item-from-dropdown-list-on-page-load-no-jquery
+			option_month.remove(i); //console.log(i);
+		}
+	}
+	
+	selected_year = document.getElementById("year").value;
+	if(selected_year==current_year){ //if selected year is this year
+		overused_loop(1,current_month,option_month);
+	}
+	else{ //for any other year
+		overused_loop(1,12,option_month);
+	}
+	//clears month dropdown if "year" is selected
+	if(selected_year=="year"){
+		for(j=0;j<4;j++){ //see identical loop above for more info
+			for(i=1;i<=12;i++){ 
+				option_month.remove(i); //console.log(i);
+			}
+		}	
+	} //timenow = performance.now()-time; console.log("pop_month took: " + timenow.toString() + " ms to run");
+	pop_day();
+}
+
+/////////////////////
+
+//populate day based on month picked
+
+var current_day = (new Date().getDate());
+var option_day = document.getElementById("day");
+var selected_month;// = document.getElementById("month").value;
+//console.log(selected_month);
+
+function pop_day(){ //runs when month is selected //var time = performance.now();
+//https://www.w3schools.com/jsref/event_onchange.asp
+
+	//remove method to clear old days dropdown
+	for(j=0;j<5;j++){ //I have no clue why this has to be here. Without it it only deletes every other option
+		for(i=1;i<=31;i++){
+			option_day.remove(i); //console.log(i);
+		}
+	}
+	
+	selected_month = document.getElementById("month").value; //gets value of month chosen
+	if(selected_year==current_year && selected_month==current_month){ //if selected year is this year
+		overused_loop(1,current_day,option_day);
+	}
+	else{ //case switch for any other month with if statements for february
+		switch(parseInt(selected_month)){ //https://stackoverflow.com/questions/16706716/using-two-values-for-one-switch-case-statement
+			case 1:
+            case 3:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 12:
+				overused_loop(1,31,option_day);
+                break;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+				overused_loop(1,30,option_day);
+                break;
+            case 2:
+                if(selected_year%400==0){ //console.log("400");
+					overused_loop(1,29,option_day);
+				}
+				else if(selected_year%100==0){ //console.log("100");
+					overused_loop(1,28,option_day);
+				}
+				else if(selected_year%4==0){ //console.log("4");
+					overused_loop(1,29,option_day);
+				}
+                else{ //console.log("default");
+					overused_loop(1,28,option_day);
+				}	
+                break;
+            default:
+				//console.log("something went wrong or was reset");
+		}
+	}
+	//clears day dropdown if "month" is selected
+	if(selected_month=="month"){
+		for(j=0;j<5;j++){ //see identical loop above for more info
+			for(i=1;i<=31;i++){ 
+				option_day.remove(i); //console.log(i);
+			}
+		}	
+	} //timenow = performance.now()-time; console.log("pop_day took: " + timenow.toString() + " ms to run");
+}
+
+/////////////////////
+
+//function for over used for loop
+function overused_loop(start,stop,type){ //start is 1 for month/day and 1910 for year //stop is 12 or current for month, 28 thru 31 for day and current or current-20 for year //type is option_year option_month or option_day
+	for(i=start;i<=stop;i++){ //console.log(i);
+		var opt = document.createElement("option");
+		opt.textContent = i; //TODO: add names of month "January" etc.
+		opt.value = i;
+		type.appendChild(opt);
+	}
+}
+//TODO: create remove function to replace repetitive loops
+
+/////////////////////
+
+function verify(){
+	
+	document.getElementById("error_messages").innerHTML="";
+	document.getElementById("output").innerHTML="";
+	var nm = document.getElementById("name").value; //console.log(nm); //https://stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp
+	var bt = document.getElementById("booktype").value; //console.log(bt);
+	var yr = document.getElementById("year").value; //console.log(yr); //these are strings
+	var mnth = document.getElementById("month").value; //console.log(mnth);
+	var dy = document.getElementById("day").value; //console.log(dy);
+	var error = "";
+	
+	//add to error var and print at end if not empty
+	//date checking
+	if (!(bt=="sday" || bt=="bday")){
+		error+="\nError: book type not selected"; //.concat() sucks
+	}
+	if (yr=="year"){
+		error+="<br>Error: year not selected";
+	}
+	if (mnth=="month"){
+		error+="<br>Error: month not selected";
+	}
+	if (dy=="day"){
+		error+="<br>Error: day not selected";
+	}
+	if (yr<1910 || yr>current_year){
+		error+="<br>Error: year out of range";
+	}
+	if(yr==current_year){
+		if(mnth>current_month){
+			error+="<br>Error: month out of range";
+		}
+		if(mnth==current_month){
+			if(dy>current_day){
+				error+="<br>Error: day out of range";
+			}
+		}
+	}
+	//name checking  //SECURITY NOTICE: NO SANITIZATION IS BEING DONE HERE
+	if(nm==""){
+		error+="<br>Error: no name inputted";
+	}
+	//console.log(/[^a-zA-Z0-9'"!.,-\s]/.test(nm)); //https://stackoverflow.com/questions/36437508/how-to-check-string-against-whitelisted-characters-in-javascript
+	if(/[^a-zA-Z0-9'"!.,-\s]/.test(nm)==true){ //TODO: tell user which characters are invalid  //allow quotes  //simplify regex?
+		error+="<br>Error: invalid characters in name";
+	}
+	
+	//output errors to user for correction
+	if(error != ""){ //console.log(error);
+		document.getElementById("error_messages").innerHTML=error;
+	}
+	//outputs correct information
+	else{ //display name //display date in mm/dd/yyyy and month dd, yyyy format
+		document.getElementById("output").innerHTML="Name: "+nm+"<br>"+"Date selected: "+mnth+"/"+dy+"/"+yr;
+	}
+}
+
+</script>
+</body>
+</HTML>
