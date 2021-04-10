@@ -1,0 +1,31 @@
+<config>
+  <!-- Folding Core -->
+  <checkpoint v='20'/>
+
+  <!-- HTTP Server -->
+  <allow v='127.0.0.1 10.0.0.33 10.0.0.3'/>
+
+  <!-- Network -->
+  <proxy v=':8080'/>
+
+  <!-- Remote Command Server -->
+  <command-allow-no-pass v='127.0.0.1 10.0.0.33 10.0.0.3'/>
+
+  <!-- Slot Control -->
+  <power v='full'/>
+
+  <!-- User Information -->
+  <team v='223518'/>
+  <user v='yobleck'/>
+
+  <!-- Folding Slots -->
+  <slot id='0' type='CPU'>
+    <cpus v='8'/>
+    <paused v='true'/>
+  </slot>
+  <slot id='1' type='GPU'>
+    <paused v='true'/>
+    <pci-bus v='45'/>
+    <pci-slot v='0'/>
+  </slot>
+</config>
