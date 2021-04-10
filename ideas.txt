@@ -1,0 +1,102 @@
+meet the engineer plays until "use more gun" which loops 4-10 times then cut to death star blowing up alderaan with text over it saying mean mother hubbard
+
+google search "kill child", cop with feet on desk reading paper perks up, search "kill child process", cop relaxes
+
+song mashup
+portal still alive lyrics over tubthumping by chumbawamba music
+guitar mass by infected mushroom x one man moon band by stephen walking
+
+username idea
+    <person object at mem address 0xNTMxODAwOA==>        0x then "NTMxODAwOA==" (base64) translates to 5318008 (dec)
+    
+man find pandoras box and says: "pandoras box. legends say all the worlds horros were unleased from it leaving behind only hope"
+opens box. "whats this hiding under hope"
+[insert disliked thing here] jumps out of box past man holding hope and yells: "I'm finally free"
+
+running shoes
+
+make radio station where I DJ my own music. (blog/diary?)
+
+scp krunner plugin type scp then number and open that page in default browser
+
+update bios you fool!
+
+webcam realtime blur program. see bsp_cover project
+
+add genre tag you youtube downloader
+
+add tags to danbooru scrape script
+
+surf maps
+    WIP
+        mom, guitar, forbidden_ways, lux(missing info_player_start), kitsune2, overgrowth2, mesa_aether, heaven_njv, me, garden, cyberwave, tundra
+    
+    Cleared
+        beginner, rookie, utopia, school, mesa_fixed, kitsune
+
+
+
+star wars quote paraphrased to talk about twitter/4chan:
+    I felt a great disturbance in the 
+    Force... as if millions of voices 
+    suddenly cried out in anger and 
+    wouldn't stop. I fear we have created
+    something terrible.
+
+old see folder 3d_2.0
+3d renderer 2.0
+    2D plane object that stores coordinate, vector to say which direction the plane is facing, texture info
+    use tree.py to store 2d plane objects in oct-tree
+    use player position and camera angle to get 2D planes that player might be able to see
+    use vector math to check if player can actually see object (https://www.mathsisfun.com/algebra/vectors-cross-product.html , https://www.mathsisfun.com/algebra/vectors-dot-product.html)
+    figure out which pixels in frame buffer should actually show object (don't forget z-buffer for objects in front of others)
+    render with ncures/qt/html canvas?
+    python/c++/js?
+
+Python midi
+    mess around with converting pi,e,fibonacci,mandelbrot and other stuff into music
+
+how long does it take wolfie to woof in FLOB
+
+
+procedurally generated rooms (rougue like)
+    25% chance that side of square will generate another room (igonre if room already exists
+    draw as 10x10 pixel to demonstrate
+
+project verticality
+    cp_sunshine
+
+python password handling: import getpass, hashlib, os;
+    salt = os.urandom(16).hex().encode();
+    hashed_password = hashlib.pbkdf2_hmac("sha512",getpass.getpass().encode(),salt,100000).hex();
+    # write salt and hash to file
+
+
+pypy makes sudoku solver 4x faster. still too lsow. try breadth first with realtime visual display
+
+export CACA_GEOMETRY=widthxheight   (96x54) for 1280x720 vids
+export CACA_DRIVER=ncurses or (whats the default?)
+mplayer -vo caca -framedrop "filename.ext"     -framedrop if necessary
+
+
+short story idea:
+war crime committed on dark side of moon. enemy soldier pows helmets removed
+years later automated mining rig jams on their bodies. written as tech support document
+news report interlude
+military investigation document
+no countries mentioned, names of those involved in crime redacted
+
+
+everyone's an NPC:
+short video essays about playing multiplayer video games alone
+
+
+clock.qml 
+/usr/share/sddm/themes/breath2/
+#A76500
+
+xWatchEnthusiastx
+You'll soon find that the Linux "community" is a loosely arranged toxic set of cliques who are their own echo chambers - some more vociferous than others. Holding any kind of tech-related opinion - no matter how well reasoned will draw extreme levels of hostility from some areas.
+This is where the internet is leading us in terms of manufacturing "safe spaces" that become deeply opinionated hive-mind echo-chambers, purging "wrong-think" and viciously safeguarding their own particular set of delusions.
+The really sad thing is that when you meet these people in real life, they are totally spineless, emotionally crippled and cave in under any kind of pressure.
+Do what you want and don't look for validation. In the end, you are right because it is your machine and you can run it how you see fit. You are master of your own destiny and captain of your own ship. Good luck.
