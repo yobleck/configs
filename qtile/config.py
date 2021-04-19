@@ -47,6 +47,7 @@ def initial_startup_stuff():
     
     subprocess.Popen(["xinput", "--set-prop", "Logitech USB Receiver", "libinput Accel Profile Enabled", "0,", "1"]); #mouse no accel
     subprocess.Popen(["xinput", "--set-prop", "Logitech USB Receiver", "libinput Accel Speed", "0"]); #mouse speed
+    subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
     
     subprocess.Popen(["xset", "s", "off", "-dpms"]);
     subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"]); #lock screen and monitors off
@@ -66,6 +67,7 @@ def initial_startup_stuff():
     #subprocess.Popen(["xbindkeys"]);
     #TODO: sudo pacman -Sy as startup service
     #TODO: disable desktop_scroll service
+    #TODO: gwe on startup
     #TODO: need /usr/lib/klauncher --fd=8 kdeinit5 kinit kactivitymanagerd kioclient exec .exe and kded5 so kde apps start quickly?
     subprocess.Popen(["kill", "-2", "kglobalaccel5"]);
     subprocess.Popen(["kill", "-2", "kwalletd5"]);
@@ -175,8 +177,8 @@ for i in groups:
     ])
 """
 groups = [];
-#["web", "2nd", "F@H", "htop", "misc"] TODO: add video game tab
-groups.append(Group("web"));
+#["web":"a", "2nd":"s", "F@H":"d", "htop":"f", "misc":"g"] TODO: add video game tab
+groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]));
 groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py"));
 groups.append(Group("F@H", layout="stack", spawn=["FAHControl", "konsole"])); #TODO: add konsole -e cd fah; FAHClient
 groups.append(Group("htop", spawn="ksysguard")); # --style gtk2
@@ -246,7 +248,6 @@ screens = [
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
                 #TODO: look at source code and find out how to disable click on focused group causing switch to another group
                 widget.TextBox("|", foreground="#00aa00"),
-                #widget.Image(filename="~/Pictures/borg_tex1.jpg"),
                 widget.Prompt(),
                 widget.TaskList(foreground="#00aa00", border="#00aa00"),
                 widget.Chord( #multi key binds but not holding all keys down at same time
@@ -278,6 +279,8 @@ screens = [
     Screen( #2560x1440_60
         bottom=bar.Bar(
             [
+                widget.LaunchBar(progs=[("start", "plasmawindowed org.kde.plasma.kicker", "kde start menu")],
+                                 default_icon="/usr/share/icons/manjaro/maia/24x24.png"),
                 widget.CurrentLayout(foreground="#00aa00"),
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
@@ -285,7 +288,7 @@ screens = [
                 #widget.Image(filename="~/Pictures/borg_tex1.jpg"),
                 widget.TaskList(foreground="#00aa00", border="#00aa00"),
                 widget.Moc(foreground="#00aa00", update_interval=1),
-                widget.Volume(volume_down_command="pulseaudio-ctl down", 
+                widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
                               foreground="#00aa00",
@@ -335,8 +338,9 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class='ssh-askpass'),  # ssh-askpass
     Match(wm_class='popup_menu'),
     Match(wm_class="FAHStats"), #folding @ home stats widget
-    Match(wm_class="polkit-kde-authentication-agent-1"), #WM_CLASS(STRING) = "polkit-kde-authentication-agent-1", "polkit-kde-authentication-agent-1"
+    Match(wm_class="polkit-kde-authentication-agent-1"), #WM_CLASS(STRING) = "polkit-kde-authentication-agent-1", ditto
     Match(wm_class="krunner"),
+    Match(wm_class="plasmawindowed"),
 ])
 #TODO: add window to group matching rules
 auto_fullscreen = True
