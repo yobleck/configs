@@ -47,7 +47,7 @@ def initial_startup_stuff():
     
     subprocess.Popen(["xinput", "--set-prop", "Logitech USB Receiver", "libinput Accel Profile Enabled", "0,", "1"]); #mouse no accel
     subprocess.Popen(["xinput", "--set-prop", "Logitech USB Receiver", "libinput Accel Speed", "0"]); #mouse speed
-    subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
+    #subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
     
     subprocess.Popen(["xset", "s", "off", "-dpms"]);
     subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"]); #lock screen and monitors off
@@ -72,14 +72,20 @@ def initial_startup_stuff():
     subprocess.Popen(["kill", "-2", "kglobalaccel5"]);
     subprocess.Popen(["kill", "-2", "kwalletd5"]);
 
+
+@hook.subscribe.startup
+def startup_stuff():
+    subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
+
+
 @hook.subscribe.shutdown
-def shtdwn():
+def shutdown_stuff():
     #kill or restart sddm
     #or systemctl poweroff
     #kill xbindkeys and mocp server and xautolock
     pass;
     
-#TODO:mouse callback on bar widgets
+#TODO:mouse callback on bar widgets?
 
 mod = "mod4"
 terminal = guess_terminal()
@@ -213,16 +219,16 @@ keys.extend([
 #log_test("\n\n\ncreating layouts\n");
 layouts = [
     layout.Max(),
-    layout.Stack(num_stacks=2, border_focus="#00ff00"),
+    layout.Stack(num_stacks=2, border_focus="#00aa00"),
     # Try more layouts by unleashing below layouts.
     # layout.Bsp(),
-    layout.Columns(border_focus="#00ff00"),
+    layout.Columns(border_focus="#00aa00"),
     #layout.Matrix(),
     #layout.MonadTall(),
     # layout.MonadWide(),
     # layout.RatioTile(),
     # layout.Tile(),
-    layout.TreeTab(previous_on_rm=True, active_bg="#00aa00"),
+    #layout.TreeTab(previous_on_rm=True, active_bg="#00aa00"),
     # layout.VerticalTile(),
     # layout.Zoomy(),
     #layout.BrowserTab(), #these are just me yobleck messing around
@@ -243,20 +249,20 @@ screens = [
     Screen( #1920x1080_144
         bottom=bar.Bar(
             [
-                widget.CurrentLayout(foreground="#00aa00"),
+                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono"),
                 widget.TextBox("|", foreground="#00aa00"),
-                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
+                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
                 #TODO: look at source code and find out how to disable click on focused group causing switch to another group
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.Prompt(),
-                widget.TaskList(foreground="#00aa00", border="#00aa00"),
+                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono"), #TODO: test padding and margin with east asian chars
                 widget.Chord( #multi key binds but not holding all keys down at same time
                     chords_colors={
                         'launch': ("#ff0000", "#ffffff"),
                     },
                     name_transform=lambda name: name.upper(),
                 ),
-                widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=50),
+                widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=50, font="Noto Mono"),
                 widget.Systray(),
                 #custom_command=("pamac checkupdates",3)   "sh /home/yobleck/.config/qtile/test.sh 1"   ("pamac checkupdates -q", 0)
                 #widget.CheckUpdates(distro="Arch", execute="pamac-manager", update_interval="600", no_update_string=" U ",
@@ -264,9 +270,9 @@ screens = [
                                     #),
                 widget.CheckUpdates(custom_command="pamac checkupdates -q; echo -n", #custom_command_modify = (lambda x: x/2-1),
                                     execute="pamac-manager", update_interval="600",
-                                    no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#aa0000",
+                                    no_update_string=" U ", font="Noto Mono", colour_no_updates="#00aa00", colour_have_updates="#aa0000",
                                     ),
-                widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, foreground="#00aa00"), #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+                widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono"), #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
                 #widget.QuickExit(),
             ],
             24,
@@ -281,19 +287,19 @@ screens = [
             [
                 widget.LaunchBar(progs=[("start", "plasmawindowed org.kde.plasma.kicker", "kde start menu")],
                                  default_icon="/usr/share/icons/manjaro/maia/24x24.png"),
-                widget.CurrentLayout(foreground="#00aa00"),
+                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono"),
                 widget.TextBox("|", foreground="#00aa00"),
-                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
+                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
                 widget.TextBox("|", foreground="#00aa00"),
                 #widget.Image(filename="~/Pictures/borg_tex1.jpg"),
-                widget.TaskList(foreground="#00aa00", border="#00aa00"),
-                widget.Moc(foreground="#00aa00", update_interval=1),
+                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono"),
+                widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono"),
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
-                              foreground="#00aa00",
+                              foreground="#00aa00", font="Noto Mono"
                               ),
-                widget.Clock(format='%a %H:%M',fontsize=18, foreground="#00aa00"),
+                widget.Clock(format='%a %H:%M',fontsize=18, foreground="#00aa00", font="Noto Mono"),
             ],
             24,
             background=["#000000","#000000","#000000","#003300"], #bar background
@@ -313,6 +319,7 @@ mouse = [
     Click([mod], "Button2", lazy.window.bring_to_front())
 ]
 
+#Misc settings
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 main = None  # WARNING: this is deprecated and will be removed soon
@@ -341,10 +348,18 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="polkit-kde-authentication-agent-1"), #WM_CLASS(STRING) = "polkit-kde-authentication-agent-1", ditto
     Match(wm_class="krunner"),
     Match(wm_class="plasmawindowed"),
-])
+    ],
+no_reposition_rules=[
+    Match(wm_class="FAHStats"),
+    #Match(wm_class="plasmawindowed"), #only sort of works
+    ]
+)
 #TODO: add window to group matching rules
 auto_fullscreen = True
 focus_on_window_activation = "smart"
+#reconfigure_screens = True; #doesn't work with chances through nvidia settings?
+#auto_minimize = True; #some games auto min when focus lost
+
 
 # XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
 # string besides java UI toolkits; you can see several discussions on the
