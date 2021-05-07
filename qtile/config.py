@@ -27,14 +27,15 @@
 
 from typing import List  # noqa: F401
 
-from libqtile import bar, layout, widget, hook
+from libqtile import bar, layout, widget, hook, qtile
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+from libqtile import extension;
 
 def log_test(i):
     f = open("/home/yobleck/qtile_log.txt","a");
-    f.write(str(i));
+    f.write(str(i) + "\n");
     f.close();
 
 #configure monitors via nvidia settings. requires mod1+control+r to fix layout
@@ -67,10 +68,13 @@ def initial_startup_stuff():
     #subprocess.Popen(["xbindkeys"]);
     #TODO: sudo pacman -Sy as startup service
     #TODO: disable desktop_scroll service
-    #TODO: gwe on startup
+    subprocess.Popen(["gwe", "--hide-window", "&"]);
     #TODO: need /usr/lib/klauncher --fd=8 kdeinit5 kinit kactivitymanagerd kioclient exec .exe and kded5 so kde apps start quickly?
     subprocess.Popen(["kill", "-2", "kglobalaccel5"]);
+    #above is killed and allowed to respawn so taht wtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
     subprocess.Popen(["kill", "-2", "kwalletd5"]);
+    subprocess.run(["sleep", "2"]);
+    subprocess.Popen(["kill", "-2", "gwe"]);
 
 
 @hook.subscribe.startup
@@ -102,17 +106,21 @@ keys = [
     Key(["mod1", "shift"], "Tab", lazy.layout.up(),
         desc="Move focus up in stack pane"),
 
-    # Move windows up or down in current stack
-    Key([mod, "control"], "k", lazy.layout.shuffle_down(),
+    #move windows around in the columns layout
+    Key([mod, "shift"], "k", lazy.layout.shuffle_down(),
         desc="Move window down in current stack "),
-    Key([mod, "control"], "i", lazy.layout.shuffle_up(),
+    Key([mod, "shift"], "i", lazy.layout.shuffle_up(),
         desc="Move window up in current stack "),
+    Key([mod, "shift"], "j", lazy.layout.shuffle_left(),
+        desc="Move window left in current stack "),
+    Key([mod, "shift"], "l", lazy.layout.shuffle_right(),
+        desc="Move window right in current stack "),
 
-    # Switch window focus to other pane(s) of stack
+    # Switch window focus to other pane(s) of stack layout
     Key([mod], "space", lazy.layout.next(),
         desc="Switch window focus to other pane(s) of stack"),
 
-    # Move window to another pane in stack
+    # Move window to another pane in stack layout
     Key([mod, "shift"], "space", lazy.layout.client_to_next(),
         desc="move window to other pane of split stack"),
     # Swap panes of split stack
@@ -138,6 +146,7 @@ keys = [
     Key([mod], "r", lazy.spawn("konsole"), desc="Spawn a command using a prompt widget"),
     Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
+    Key([mod],"p",lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
     
     #volume control
     Key([], "XF86AudioRaiseVolume",
@@ -183,12 +192,11 @@ for i in groups:
     ])
 """
 groups = [];
-#["web":"a", "2nd":"s", "F@H":"d", "htop":"f", "misc":"g"] TODO: add video game tab
 groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]));
 groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py"));
 groups.append(Group("F@H", layout="stack", spawn=["FAHControl", "konsole"])); #TODO: add konsole -e cd fah; FAHClient
 groups.append(Group("htop", spawn="ksysguard")); # --style gtk2
-groups.append(Group("misc"));
+groups.append(Group("game", matches=[Match(wm_class=["Steam", "MultiMC5"])])); #TODO: add video game match rules
 
 #TODO: use for loops so this isn't as copy paste
 keys.extend([
@@ -200,8 +208,8 @@ keys.extend([
             desc="Switch to group F@H"),
     Key([mod], "f", lazy.group["htop"].toscreen(toggle=False),
             desc="Switch to group htop"),
-    Key([mod], "g", lazy.group["misc"].toscreen(toggle=False),
-            desc="Switch to group misc"),
+    Key([mod], "g", lazy.group["game"].toscreen(toggle=False),
+            desc="Switch to group game"),
     
     Key([mod, "shift"], "a", lazy.window.togroup("web"),
             desc="move focused window to group web"),
@@ -211,10 +219,19 @@ keys.extend([
             desc="move focused window to group F@H"),
     Key([mod, "shift"], "f", lazy.window.togroup("htop"),
             desc="move focused window to group htop"),
-    Key([mod, "shift"], "g", lazy.window.togroup("misc"),
-            desc="move focused window to group misc"),
+    Key([mod, "shift"], "g", lazy.window.togroup("game"),
+            desc="move focused window to group game"),
     ]);
-#"""
+"""
+g_list = ["web":"a", "2nd":"s", "F@H":"d", "htop":"f", "misc":"g"];
+for g in g_list:
+    keys.extend([
+        Key([mod], g_list[g], lazy.group[g].toscreen(toggle=False),
+                desc="Switch to group "+g),
+        Key([mod, "shift"], g_list[g], lazy.window.togroup(g),
+            desc="move focused window to group "+g),
+        ]);
+"""
 
 #log_test("\n\n\ncreating layouts\n");
 layouts = [
@@ -254,8 +271,9 @@ screens = [
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
                 #TODO: look at source code and find out how to disable click on focused group causing switch to another group
                 widget.TextBox("|", foreground="#00aa00"),
-                widget.Prompt(),
-                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono"), #TODO: test padding and margin with east asian chars
+                widget.Prompt(ignore_dups_history=True),
+                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
+                                mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}), #TODO: test padding and margin with east asian chars
                 widget.Chord( #multi key binds but not holding all keys down at same time
                     chords_colors={
                         'launch': ("#ff0000", "#ffffff"),
@@ -272,7 +290,8 @@ screens = [
                                     execute="pamac-manager", update_interval="600",
                                     no_update_string=" U ", font="Noto Mono", colour_no_updates="#00aa00", colour_have_updates="#aa0000",
                                     ),
-                widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono"), #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+                widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono",
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}), #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
                 #widget.QuickExit(),
             ],
             24,
@@ -285,21 +304,24 @@ screens = [
     Screen( #2560x1440_60
         bottom=bar.Bar(
             [
-                widget.LaunchBar(progs=[("start", "plasmawindowed org.kde.plasma.kicker", "kde start menu")],
-                                 default_icon="/usr/share/icons/manjaro/maia/24x24.png"),
+                #widget.LaunchBar(progs=[("start", "plasmawindowed org.kde.plasma.kicker", "kde start menu")],
+                                 #default_icon="/usr/share/icons/manjaro/maia/24x24.png"),
+                widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.kickofflegacy")}),
                 widget.CurrentLayout(foreground="#00aa00", font="Noto Mono"),
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
                 widget.TextBox("|", foreground="#00aa00"),
-                #widget.Image(filename="~/Pictures/borg_tex1.jpg"),
-                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono"),
+                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
+                                mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}), #TODO: get tsklst win under mouse not of focused
                 widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono"),
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
                               foreground="#00aa00", font="Noto Mono"
                               ),
-                widget.Clock(format='%a %H:%M',fontsize=18, foreground="#00aa00", font="Noto Mono"),
+                widget.Clock(format='%a %H:%M',fontsize=18, foreground="#00aa00", font="Noto Mono",
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}),
             ],
             24,
             background=["#000000","#000000","#000000","#003300"], #bar background
@@ -354,7 +376,29 @@ no_reposition_rules=[
     #Match(wm_class="plasmawindowed"), #only sort of works
     ]
 )
-#TODO: add window to group matching rules
+#import time;
+@hook.subscribe.client_managed
+def kde_widgets(window):
+    if(window.window.get_wm_class()[1] == "plasmawindowed"):
+        #log_test("passed wm_class test");
+        #log_test(window.window.get_name());
+        #https://github.com/qtile/qtile/blob/master/libqtile/backend/x11/window.py
+        #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str));
+        #time.sleep(0.5);
+        if(window.window.get_name() == "Calendar"):
+            #log_test("passed Cal name test");
+            #qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193"); # NOTE wmctrl uninstalled?
+            qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 225 193 windowmove 2333 1221");
+            #below doesnt respect different widgets
+            #window.cmd_set_position_floating(2333, 1221);
+            #window.cmd_set_size_floating(225, 193);
+        
+        if(window.window.get_name() == "Legacy Application Launcher"):
+            #log_test("passed App menu name test");
+            #qtile.cmd_spawn("wmctrl -r \'Application Menu\' -e 0,0,949,273,467"); #old new menu
+            qtile.cmd_spawn("xdotool search \"Legacy Application Launcher\" windowsize 416 544 windowmove 0 869"); #windowsize 416 544
+            
+
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 #reconfigure_screens = True; #doesn't work with chances through nvidia settings?
