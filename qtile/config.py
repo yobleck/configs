@@ -46,8 +46,8 @@ def initial_startup_stuff():
     #loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
     subprocess.Popen(["picom"]); #compositor for window animations and transparency
     
-    subprocess.Popen(["xinput", "--set-prop", "Logitech USB Receiver", "libinput Accel Profile Enabled", "0,", "1"]); #mouse no accel
-    subprocess.Popen(["xinput", "--set-prop", "Logitech USB Receiver", "libinput Accel Speed", "0"]); #mouse speed
+    subprocess.Popen(["xinput", "--set-prop", "pointer:Logitech G602", "libinput Accel Profile Enabled", "0,", "1"]); #mouse no accel
+    subprocess.Popen(["xinput", "--set-prop", "pointer:Logitech G602", "libinput Accel Speed", "0"]); #mouse speed
     #subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
     
     subprocess.Popen(["xset", "s", "off", "-dpms"]);
@@ -298,7 +298,7 @@ screens = [
             #opacity=0,
             background=["#000000","#000000","#000000","#003300"], #bar background
         ),
-        wallpaper="~/Pictures/borg3_4k.jpg",
+        wallpaper="~/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
     ),
     Screen( #2560x1440_60
@@ -314,7 +314,8 @@ screens = [
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}), #TODO: get tsklst win under mouse not of focused
-                widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono"),
+                widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono",
+                           mouse_callbacks={"Button2": lambda: qtile.cmd_spawn("mocp -s")}),
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
@@ -326,7 +327,7 @@ screens = [
             24,
             background=["#000000","#000000","#000000","#003300"], #bar background
         ),
-        wallpaper="~/Pictures/borg3_4k.jpg",
+        wallpaper="~/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
     ),
 ]
@@ -370,6 +371,8 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="polkit-kde-authentication-agent-1"), #WM_CLASS(STRING) = "polkit-kde-authentication-agent-1", ditto
     Match(wm_class="krunner"),
     Match(wm_class="plasmawindowed"),
+    Match(wm_class="Panda3D"),
+    #Match(title="mocp"),
     ],
 no_reposition_rules=[
     Match(wm_class="FAHStats"),
@@ -377,7 +380,7 @@ no_reposition_rules=[
     ]
 )
 #import time;
-@hook.subscribe.client_managed
+@hook.subscribe.client_managed #TODO: put cal and start in scratchpad?
 def kde_widgets(window):
     if(window.window.get_wm_class()[1] == "plasmawindowed"):
         #log_test("passed wm_class test");
@@ -387,7 +390,7 @@ def kde_widgets(window):
         #time.sleep(0.5);
         if(window.window.get_name() == "Calendar"):
             #log_test("passed Cal name test");
-            #qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193"); # NOTE wmctrl uninstalled?
+            #qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193"); # NOTE wmctrl uninstalled
             qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 225 193 windowmove 2333 1221");
             #below doesnt respect different widgets
             #window.cmd_set_position_floating(2333, 1221);
