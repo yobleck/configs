@@ -42,49 +42,51 @@ def log_test(i):
 import subprocess;
 @hook.subscribe.startup_once
 def initial_startup_stuff():
-    subprocess.Popen(["nvidia-settings", "--assign", "CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}"]);
+    qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"");
     #loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
-    subprocess.Popen(["picom"]); #compositor for window animations and transparency
+    qtile.cmd_spawn("picom"); #compositor for window animations and transparency
     
-    subprocess.Popen(["xinput", "--set-prop", "pointer:Logitech G602", "libinput Accel Profile Enabled", "0,", "1"]); #mouse no accel
-    subprocess.Popen(["xinput", "--set-prop", "pointer:Logitech G602", "libinput Accel Speed", "0"]); #mouse speed
-    #subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
+    qtile.cmd_spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1"); #mouse no accel
+    qtile.cmd_spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Speed\" 0"); #mouse speed
     
-    subprocess.Popen(["xset", "s", "off", "-dpms"]);
-    subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"]); #lock screen and monitors off
-    #locker.sh: if [ $(grep -r \"RUNNING\" /proc/asound | wc -l) -eq 0 ]; then i3lock fi
+    qtile.cmd_spawn("xset s off -dpms");
+    qtile.cmd_spawn("xautolock -time 10 -locker /home/yobleck/.config/qtile/locker.sh"); #lock screen and monitors off
+    #TODO: cant manually override while video is playing. pass through argument to shell script? or disable xautolock in manual script?
     
-    subprocess.Popen(["/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style"]); #, "-s", "gtk2" #qt5ct located in .bash_profile
+    qtile.cmd_spawn("/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style"); #, "-s", "gtk2" #qt5ct located in .bash_profile
     #polkit gui agent for kate, pamac etc #requires kdesu grrrr
     #recompiled for Qt themes TODO: color schemes
     #https://stackoverflow.com/questions/6740333/can-i-run-a-qt-application-with-a-specific-theme #https://cmake.org/runningcmake/
     
     #subprocess.Popen(["export", "QT_QPA_PLATFORMTHEME=\"qt5ct\""]); #see ~/.bash_profile
     
-    subprocess.Popen(["/usr/lib/kdeconnectd"]); #kdeconnect daemon
-    subprocess.Popen(["kdeconnect-indicator"]); #kdeconnect taskbar widget icon
+    qtile.cmd_spawn("/usr/lib/kdeconnectd"); #kdeconnect daemon
+    qtile.cmd_spawn("kdeconnect-indicator"); #kdeconnect taskbar widget icon
     
-    #subprocess.Popen(["mocp", "-S"]);
-    #subprocess.Popen(["xbindkeys"]);
+    #qtile.cmd_spawn("mocp -S");
+    #qtile.cmd_spawn("xbindkeys");
     #TODO: sudo pacman -Sy as startup service
     #TODO: disable desktop_scroll service
-    subprocess.Popen(["gwe", "--hide-window", "&"]);
+    qtile.cmd_spawn("gwe --hide-window");
+    
     #TODO: need /usr/lib/klauncher --fd=8 kdeinit5 kinit kactivitymanagerd kioclient exec .exe and kded5 so kde apps start quickly?
-    subprocess.Popen(["kill", "-2", "kglobalaccel5"]);
-    #above is killed and allowed to respawn so taht wtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
-    subprocess.Popen(["kill", "-2", "kwalletd5"]);
-    subprocess.run(["sleep", "2"]);
-    subprocess.Popen(["kill", "-2", "gwe"]);
+    qtile.cmd_spawn("kill -2 kglobalaccel5");
+    #above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
+    qtile.cmd_spawn("kill -2 kwalletd5");
+    subprocess.run(["sleep", "2"]); #Needed?
+    
+    qtile.cmd_spawn("kill -2 gwe");
 
 
 @hook.subscribe.startup
 def startup_stuff():
-    subprocess.Popen(["xsetroot", "-cursor_name", "left_ptr"]); #change mouse to breeze cursor
+    #subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"]);
+    qtile.cmd_spawn("xsetroot -cursor_name left_ptr"); #change mouse to breeze cursor
 
 
 @hook.subscribe.shutdown
 def shutdown_stuff():
-    #kill or restart sddm
+    #kill or restart sddm. not needed with ly
     #or systemctl poweroff
     #kill xbindkeys and mocp server and xautolock
     pass;
@@ -146,7 +148,7 @@ keys = [
     Key([mod], "r", lazy.spawn("konsole"), desc="Spawn a command using a prompt widget"),
     Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
-    Key([mod],"p",lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
+    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
     
     #volume control
     Key([], "XF86AudioRaiseVolume",
@@ -165,32 +167,17 @@ keys = [
     Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium web browser"),
     Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch firefox web browser"),
     Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
+    Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
     
     #lock screen #https://github.com/Raymo111/i3lock-color/blob/master/examples/lock.sh
     #Key([mod], "l", lazy.spawn("i3lock -n --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\""), 
         #desc="lock screen with i3lock"),
-    Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker i3lock"), desc="lock screen with i3lock"),
+    #Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker i3lock"), desc="lock screen with i3lock"),
+    Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker /home/yobleck/.config/qtile/locker.sh"), desc="lock screen with i3lock"),
     #work around to turn screen back on after locking: lazy.spawn("xset force reset"),
 ]
-"""
-groups = [Group(i) for i in "asdf"];
-groups.append(Group("g",spawn="ksysguard"));
 
-for i in groups:
-    keys.extend([
-        # mod1 + letter of group = switch to group
-        Key([mod], i.name, lazy.group[i.name].toscreen(),
-            desc="Switch to group {}".format(i.name)),
 
-        # mod1 + shift + letter of group = switch to & move focused window to group
-        #Key([mod, "shift"], i.name, lazy.window.togroup(i.name, switch_group=True),
-            #desc="Switch to & move focused window to group {}".format(i.name)),
-        # Or, use below if you prefer not to switch to that group.
-        # # mod1 + shift + letter of group = move focused window to group
-        Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
-            desc="move focused window to group {}".format(i.name)),
-    ])
-"""
 groups = [];
 groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]));
 groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py"));
@@ -233,6 +220,7 @@ for g in g_list:
         ]);
 """
 
+
 #log_test("\n\n\ncreating layouts\n");
 layouts = [
     layout.Max(),
@@ -253,14 +241,13 @@ layouts = [
 ]
 #print(BrowserTab2);
 
+
 widget_defaults = dict(
     font='sans',
     fontsize=12,
     padding=3,
 )
 extension_defaults = widget_defaults.copy()
-
-
 
 screens = [
     Screen( #1920x1080_144
