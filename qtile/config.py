@@ -33,15 +33,17 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 from libqtile import extension;
 
+#helper functions
 def log_test(i):
     f = open("/home/yobleck/qtile_log.txt","a");
     f.write(str(i) + "\n");
     f.close();
 
-#configure monitors via nvidia settings. requires mod1+control+r to fix layout
+
 import subprocess;
 @hook.subscribe.startup_once
 def initial_startup_stuff():
+    #configure monitors via nvidia settings. requires mod1+control+r to fix layout
     qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"");
     #loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
     qtile.cmd_spawn("picom"); #compositor for window animations and transparency
@@ -149,6 +151,7 @@ keys = [
     Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
     Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
+    Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"), desc="toggle nvidia ForceCompositionPipeline"),
     
     #volume control
     Key([], "XF86AudioRaiseVolume",
@@ -282,7 +285,7 @@ screens = [
                 #widget.QuickExit(),
             ],
             24,
-            #opacity=0,
+            opacity=0.8,
             background=["#000000","#000000","#000000","#003300"], #bar background
         ),
         wallpaper="~/Pictures/382337_4k_dn.png",
@@ -312,6 +315,7 @@ screens = [
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}),
             ],
             24,
+            opacity=0.9,
             background=["#000000","#000000","#000000","#003300"], #bar background
         ),
         wallpaper="~/Pictures/382337_4k_dn.png",
@@ -361,7 +365,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="Panda3D"),
     #Match(title="mocp"),
     ],
-no_reposition_rules=[
+no_reposition_rules=[ #TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
     Match(wm_class="FAHStats"),
     #Match(wm_class="plasmawindowed"), #only sort of works
     ]
