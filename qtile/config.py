@@ -28,7 +28,7 @@
 from typing import List  # noqa: F401
 
 from libqtile import bar, layout, widget, extension, hook, qtile
-from libqtile.config import Click, Drag, Group, Key, Match, Screen
+from libqtile.config import Click, Drag, Group, Key, KeyChord, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal, send_notification
 
@@ -88,10 +88,32 @@ def initial_startup_stuff():
     #qtile.cmd_spawn("plasmawindowed org.kde.plasma.mediacontroller --statusnotifier")
 
 
+from xcffib.xproto import EventMask
+def mouse_move(qtile):
+    qtile.core._root.set_attribute(eventmask=(EventMask.StructureNotify
+                                            | EventMask.SubstructureNotify
+                                            | EventMask.SubstructureRedirect
+                                            | EventMask.EnterWindow
+                                            | EventMask.LeaveWindow
+                                            | EventMask.ButtonPress
+                                            | EventMask.PointerMotion))
+    def screen_change(event):
+        assert qtile is not None
+        if qtile.config.follow_mouse_focus and not qtile.config.cursor_warp:
+            if hasattr(event, "root_x") and hasattr(event, "root_y"):
+                screen = qtile.find_screen(event.root_x, event.root_y)
+                if screen:
+                    index_under_mouse = screen.index
+                    if index_under_mouse != qtile.current_screen.index:
+                        qtile.focus_screen(index_under_mouse, warp=False)
+        qtile.process_button_motion(event.event_x, event.event_y)
+    setattr(qtile.core, "handle_MotionNotify", screen_change)
+
 @hook.subscribe.startup
 def startup_stuff():
     #subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
     qtile.cmd_spawn("xsetroot -cursor_name left_ptr") #change mouse to breeze cursor
+    mouse_move(qtile)
 
 
 @hook.subscribe.shutdown
@@ -111,30 +133,32 @@ terminal = guess_terminal()
 from time import sleep
 from libqtile.popup import Popup
 def popup_test(qtile):
-    send_notification("popup_test_1", "this is test #1")
-    popup = Popup(qtile, text="Hello World", background="#005500")
-    #popup.text("hello world!")
-    popup.text = "hello world"
-    popup.foreground = "#ff0000"
-    popup.set_border("#0000ff")
-    popup.draw()
-    popup.place()
-    #popup.draw_text(x=0, y=0)
-    popup.unhide()
-    temp = popup.text
-    sleep(5)
-    popup.kill()
-    send_notification("popup_test_2", str(temp))
+    try:
+        send_notification("popup_test_1", "this is test #1")
+        popup = Popup(qtile, background="#005500", width=500, height=500, font_size=64, border="#0000ff", border_width=5,
+                    foreground="#ffffff", opacity=0.8)
+        #popup.layout.text = "hello world"
+        #popup.layout.text = "henlo"
+        #popup.drawer.textlayout(text="hello world",colour=popup.foreground,font_family=popup.font,
+                                #font_size=popup.font_size,font_shadow=popup.fontshadow).draw(x=50,y=50)
+        #popup.drawer.draw(width=100)
+        
+        popup.place()
+        popup.draw_text(x=50, y=50)
+        popup.draw()
+        popup.unhide()
+        sleep(5)
+        popup.kill()
+        send_notification("popup_test_2", str(popup.layout.text))
+    except Exception as e:
+        send_notification("er", str(e))
 """
+def toggle_bar(qtile):
+    qtile.cmd_hide_show_bar("bottom")
 
 keys = [
     #Key([mod], "o", lazy.function(popup_test), desc="popup"),
     # Switch between windows in current stack pane
-    #Key([mod], "k", lazy.layout.down(),
-        #desc="Move focus down in stack pane"),
-    #Key([mod], "i", lazy.layout.up(),
-        #desc="Move focus up in stack pane"),
-    #alt tab variant
     Key(["mod1"], "Tab", lazy.layout.down(),
         desc="Move focus down in stack pane"),
     Key(["mod1", "shift"], "Tab", lazy.layout.up(),
@@ -153,7 +177,6 @@ keys = [
     # Switch window focus to other pane(s) of stack layout
     Key([mod], "space", lazy.layout.next(),
         desc="Switch window focus to other pane(s) of stack"),
-
     # Move window to another pane in stack layout
     Key([mod, "shift"], "space", lazy.layout.client_to_next(),
         desc="move window to other pane of split stack"),
@@ -166,9 +189,9 @@ keys = [
     # Unsplit = 1 window displayed, like Max layout, but still with
     # multiple stack panes
     Key([mod, "shift"], "Return", lazy.layout.toggle_split(),
-        desc="Toggle between split and unsplit sides of stack"),
+        desc="Toggle between split and unsplit sides of stack"), #other behavior with columns
     #Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
-    Key([mod], "Return", lazy.spawn("konsole"), desc="Launch terminal"), # --style gtk2
+    #Key([mod], "Return", lazy.spawn("konsole"), desc="Launch terminal"), # --style gtk2
 
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
@@ -177,19 +200,19 @@ keys = [
 
     Key([mod, "control"], "r", lazy.restart(), desc="Restart qtile"),
     Key([mod, "control", "shift"], "q", lazy.shutdown(), desc="Shutdown qtile"),
-    Key([mod], "r", lazy.spawn("konsole"), desc="Spawn a command using a prompt widget"),
     Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
     Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
     Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"),
         #lazy.function(vsync_toggle),
         desc="toggle nvidia ForceCompositionPipeline"),
+    Key([mod, "control"], "b", lazy.function(toggle_bar), desc="toggle bar visibility"),
     
     #volume control
     Key([], "XF86AudioRaiseVolume",
-        lazy.spawn("pulseaudio-ctl up"),lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
+        lazy.spawn("pulseaudio-ctl up"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
     Key([], "XF86AudioLowerVolume",
-        lazy.spawn("pulseaudio-ctl down"),lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
+        lazy.spawn("pulseaudio-ctl down"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
     Key([], "XF86AudioMute",
         lazy.spawn("pulseaudio-ctl mute")),
     #Key([], "XF86AudioNext",
@@ -198,13 +221,16 @@ keys = [
         #lazy.spawn("pulseaudio-ctl mute")),#play next and prev
     
     #run various programs
-    Key([mod], "e", lazy.spawn("dolphin"), desc="launch dolphin file manager"), # --style gtk2 export QT_QPA_PLATFORMTHEME=\"qt5ct\" 
-    Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
-    Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch firefox"),
-    Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
-    Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
-    Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
-    
+    #KeyChord(["control", "mod1"], "z", [
+        Key(["control", "mod1"], "e", lazy.spawn("dolphin"), desc="launch dolphin file manager"), # --style gtk2 export QT_QPA_PLATFORMTHEME=\"qt5ct\" 
+        Key(["control", "mod1"], "r", lazy.spawn("konsole"), desc="launch konsole"),
+        Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
+        Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch firefox"),
+        Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
+        Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
+        Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
+        Key([mod], "3270_PrintScreen", lazy.spawn("spectacle"), desc="launch scpectacle"),
+    #]),
     #lock screen #https://github.com/Raymo111/i3lock-color/blob/master/examples/lock.sh
     #Key([mod], "l", lazy.spawn("i3lock -n --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\""), 
         #desc="lock screen with i3lock"),
@@ -217,8 +243,8 @@ keys = [
 ###GROUPS AND LAYOUTS###
 groups = [];
 groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
-groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py"))
-groups.append(Group("F@H", layout="stack", spawn=["FAHControl", "konsole"]))
+groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py", matches=[Match(wm_class=["dolphin"])]))
+groups.append(Group("F@H", layout="stack", spawn=["konsole", "FAHControl"]))
 groups.append(Group("htop", spawn="ksysguard")) # --style gtk2
 groups.append(Group("game", matches=[Match(wm_class=["Steam", "MultiMC5"])])) #TODO: add video game match rules
 
@@ -271,24 +297,23 @@ screens = [
     Screen( #1920x1080_144
         bottom=bar.Bar(
             [
-                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout()}),
+                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
+                                                                                              "Button4": lambda: qtile.cmd_prev_layout(),
+                                                                                              "Button5": lambda: qtile.cmd_next_layout()}),
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
                 #TODO: look at source code and find out how to disable click on focused group causing switch to another group
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.Prompt(ignore_dups_history=True),
                 widget.Chord( #multi key binds but not holding all keys down at same time
-                    chords_colors={
-                        'launch': ("#ff0000", "#ffffff"),
-                    },
-                    name_transform=lambda name: name.upper(),
-                ),
+                    chords_colors={'launch': ("#ff0000", "#ffffff"),}, name_transform=lambda name: name.upper(),
+                    ),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
                                 mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}), #TODO: test padding and margin with east asian chars
                 #widget.WindowName(parse_text=parse),
                 #widget.WindowTabs(parse_text=parse),
-                widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=50, font="Noto Mono"),
+                widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100, font="Noto Mono"),
                 widget.Systray(),
                 #custom_command=("pamac checkupdates",3)   "sh /home/yobleck/.config/qtile/test.sh 1"   ("pamac checkupdates -q", 0)
                 #widget.CheckUpdates(distro="Arch", execute="pamac-manager", update_interval="600", no_update_string=" U ",
@@ -302,13 +327,17 @@ screens = [
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}),
                 #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
                 #widget.QuickExit(),
+                widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(0)}, font="Noto Mono"),
             ],
             24,
-            opacity=0.8,
-            background=["#000000","#000000","#000000","#003300"], #bar background
+            #opacity=0.5,
+            background=["#00000000","#00000022","#00000055","#00330088"], #bar background
         ),
         wallpaper="~/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
+        #width=1920,
+        #height=1080,
+        #x=2560,
     ),
     Screen( #2560x1440_60
         bottom=bar.Bar(
@@ -317,7 +346,9 @@ screens = [
                                  #default_icon="/usr/share/icons/manjaro/maia/maia.svg"),
                 widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png", #green.svg
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.kickofflegacy")}),
-                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout()}),
+                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
+                                                                                              "Button4": lambda: qtile.cmd_prev_layout(),
+                                                                                              "Button5": lambda: qtile.cmd_next_layout()}),
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
                 widget.TextBox("|", foreground="#00aa00"),
@@ -325,7 +356,7 @@ screens = [
                                 parse_text=parse,
                                 mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}), #TODO: get tsklst win under mouse not of focused
                 widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono",
-                           mouse_callbacks={"Button2": lambda: qtile.cmd_spawn("mocp -s")}),
+                           mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s")}),
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
@@ -333,17 +364,21 @@ screens = [
                               ),
                 widget.Clock(format='%a %H:%M',fontsize=18, foreground="#00aa00", font="Noto Mono",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}),
+                widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(1)}, font="Noto Mono"),
             ],
             24,
             opacity=0.9,
-            background=["#000000","#000000","#000000","#003300"], #bar background
+            background=["#00000000","#00000022","#00000055","#00330088"], #bar background
         ),
         wallpaper="~/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
+        #width=2560,
+        #height=1440,
     ),
 ]
 
 
+###Misc settings###
 # Drag floating layouts.
 mouse = [
     Drag([mod], "Button1", lazy.window.set_position_floating(),
@@ -353,7 +388,6 @@ mouse = [
     Click([mod], "Button2", lazy.window.bring_to_front())
 ]
 
-###Misc settings###
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 main = None  # WARNING: this is deprecated and will be removed soon
@@ -383,7 +417,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="krunner"),
     Match(wm_class="plasmawindowed"),
     Match(wm_class="Panda3D"),
-    #Match(title="mocp"),
+    Match(wm_class="Xephyr"),
     ],
 no_reposition_rules=[ #TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
     Match(wm_class="FAHStats"),
