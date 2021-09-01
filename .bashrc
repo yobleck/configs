@@ -172,11 +172,9 @@ alias greenwithenvy="flatpak run com.leinardi.gwe"
 #counter strike source dedicated server shortcut
 alias cssds="/home/yobleck/.steam/steamcmd/css/srcds_run -console -game cstrike -maxplayers 32 -port 27015 -sv_airaccelerate 150 +map surf_utopia_njv"
 surf(){
-    if [[ $1 == "h" ]]; then
+    if [[ $1 == "h" || $1 == "-h" || $1 == "--help" ]]; then
         echo "list of surf maps in /home/yobleck/.steam/steamcmd/css/cstrike/maps/"
-        cd /home/yobleck/.steam/steamcmd/css/cstrike/maps/
-        ls surf*.bsp
-        cd ~
+        ls /home/yobleck/.steam/steamcmd/css/cstrike/maps/surf*.bsp
     elif [ -z "$1" ]; then
         echo "no map supplied, defaulting to surf_utopia_njv"
         echo "running dedicated server, launching steam and running CS:S"
@@ -185,7 +183,7 @@ surf(){
         steam -applaunch 240 +connect 10.0.0.136:27015 &
         disown
     else
-        echo "running dedicated server, launching steam and running CS:S"
+        echo "running dedicated server with map $1, launching steam and running CS:S"
         konsole --new-tab -e /home/yobleck/.steam/steamcmd/css/srcds_run -console -game cstrike -maxplayers 32 -port 27015 -sv_airaccelerate 150 +map $1 &
         disown
         steam -applaunch 240 +connect 10.0.0.136:27015 &
