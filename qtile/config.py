@@ -34,6 +34,8 @@ from libqtile.config import Click, Drag, Group, Key, Match, Screen  # , KeyChord
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal  # , send_notification
 
+import internal_modifications as int_mod
+
 
 # Helper functions
 def log_test(i):
@@ -92,33 +94,12 @@ def initial_startup_stuff():
     # qtile.cmd_spawn("plasmawindowed org.kde.plasma.mediacontroller --statusnotifier")
 
 
-def mouse_move(qtile):
-    qtile.core._root.set_attribute(eventmask=(EventMask.StructureNotify
-                                              | EventMask.SubstructureNotify
-                                              | EventMask.SubstructureRedirect
-                                              | EventMask.EnterWindow
-                                              | EventMask.LeaveWindow
-                                              | EventMask.ButtonPress
-                                              | EventMask.PointerMotion))
-
-    def screen_change(event):
-        assert qtile is not None
-        if qtile.config.follow_mouse_focus and not qtile.config.cursor_warp:
-            if hasattr(event, "root_x") and hasattr(event, "root_y"):
-                screen = qtile.find_screen(event.root_x, event.root_y)
-                if screen:
-                    index_under_mouse = screen.index
-                    if index_under_mouse != qtile.current_screen.index:
-                        qtile.focus_screen(index_under_mouse, warp=False)
-        qtile.process_button_motion(event.event_x, event.event_y)
-    setattr(qtile.core, "handle_MotionNotify", screen_change)
-
-
 @hook.subscribe.startup
 def startup_stuff():
     #subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
     qtile.cmd_spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
-    mouse_move(qtile)
+
+    int_mod.mouse_move(qtile)
 
 
 @hook.subscribe.startup_complete
@@ -134,6 +115,33 @@ def shutdown_stuff():
     #or systemctl poweroff
     #kill xbindkeys and mocp server and xautolock
     pass
+
+
+#import time
+@hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
+def kde_widgets(window):
+    if(window.window.get_wm_class()[1] == "plasmawindowed"):
+        #log_test("passed wm_class test")
+        #log_test(window.window.get_name())
+        #https://github.com/qtile/qtile/blob/master/libqtile/backend/x11/window.py
+        #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
+        #time.sleep(0.5);
+        if(window.window.get_name() == "Calendar"):
+            #log_test("passed Cal name test")
+            #qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193") # NOTE wmctrl uninstalled
+            qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 225 193 windowmove 2333 1221")
+            #below doesnt respect different widgets
+            #window.cmd_set_position_floating(2333, 1221)
+            #window.cmd_set_size_floating(225, 193)
+
+        if(window.window.get_name() == "Legacy Application Launcher"):
+            #log_test("passed App menu name test")
+            #qtile.cmd_spawn("wmctrl -r \'Application Menu\' -e 0,0,949,273,467")  # old new menu
+            qtile.cmd_spawn("xdotool search \"Legacy Application Launcher\" windowsize 416 544 windowmove 0 869")  # windowsize 416 544
+    
+    # Adds border snapping to floating windows
+    int_mod.border_snap(window)
+
 
 #TODO:mouse callback on bar widgets?
 
@@ -426,7 +434,7 @@ screens = [
 ###Misc settings###
 # Drag floating layouts.
 mouse = [
-    Drag([mod], "Button1", lazy.window.set_position_floating(),
+    Drag([mod], "Button1", lazy.window.set_position_floating(border_snapping=True, snap_dist=20),
          start=lazy.window.get_position()),
     Drag([mod], "Button3", lazy.window.set_size_floating(),
          start=lazy.window.get_size()),
@@ -469,29 +477,6 @@ floating_layout = layout.Floating(float_rules=[
         Match(wm_class="FAHStats"),
         #Match(wm_class="plasmawindowed"), #only sort of works
 ])
-
-
-#import time;
-@hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
-def kde_widgets(window):
-    if(window.window.get_wm_class()[1] == "plasmawindowed"):
-        #log_test("passed wm_class test")
-        #log_test(window.window.get_name())
-        #https://github.com/qtile/qtile/blob/master/libqtile/backend/x11/window.py
-        #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
-        #time.sleep(0.5);
-        if(window.window.get_name() == "Calendar"):
-            #log_test("passed Cal name test")
-            #qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193") # NOTE wmctrl uninstalled
-            qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 225 193 windowmove 2333 1221")
-            #below doesnt respect different widgets
-            #window.cmd_set_position_floating(2333, 1221)
-            #window.cmd_set_size_floating(225, 193)
-
-        if(window.window.get_name() == "Legacy Application Launcher"):
-            #log_test("passed App menu name test")
-            #qtile.cmd_spawn("wmctrl -r \'Application Menu\' -e 0,0,949,273,467")  # old new menu
-            qtile.cmd_spawn("xdotool search \"Legacy Application Launcher\" windowsize 416 544 windowmove 0 869")  # windowsize 416 544
 
 
 auto_fullscreen = True
