@@ -5,6 +5,8 @@
 $PROMPT = '[{env_name}{BOLD_GREEN}{user} {cwd}]{BOLD_BLUE}{prompt_end} '
 #{curr_branch: {}}{NO_COLOR} {BOLD_BLUE}{prompt_end}{NO_COLOR}    {branch_color}
 
+$XONSH_STYLE_OVERRIDES["completion-menu"] = "bg:#2f2f2f #60b48a"
+
 #general oneliner aliases
 aliases["cls"] = "clear";
 #aliases["gwe"] = "flatpak run com.leinardi.gwe" #not needed now has aur
@@ -75,6 +77,7 @@ aliases["fahclient"] = FAHClient_filter;
 
 def fahthrottle(per):
     [$[cpulimit -p @(x) -l @(per)] for x in [$(pgrep FahCore_21).strip("\n"), $(pgrep FahCore_22).strip("\n")] if(x)]
+    notify-send "GPU WU Done"
 
 def fahsleep(timer): #format timer as "1.5h"
     sleep @(timer); FAHClient --send-pause; kill -2 @$(pgrep FAHControl); kill -2 @$(pgrep FAHClient); shutdown -h 1
