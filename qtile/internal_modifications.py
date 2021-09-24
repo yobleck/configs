@@ -1,6 +1,7 @@
 from xcffib.xproto import EventMask
 
-from libqtile import qtile
+from libqtile import qtile, images
+from libqtile.popup import Popup
 
 """
 Avoid including `self`
@@ -13,13 +14,14 @@ def log_test(i):
 
 
 def mouse_move(qtile):
-    qtile.core._root.set_attribute(eventmask=(EventMask.StructureNotify
-                                              | EventMask.SubstructureNotify
-                                              | EventMask.SubstructureRedirect
-                                              | EventMask.EnterWindow
-                                              | EventMask.LeaveWindow
-                                              | EventMask.ButtonPress
-                                              | EventMask.PointerMotion))  # Custom
+    qtile.core.eventmask = (EventMask.StructureNotify
+                            | EventMask.SubstructureNotify
+                            | EventMask.SubstructureRedirect
+                            | EventMask.EnterWindow
+                            | EventMask.LeaveWindow
+                            | EventMask.ButtonPress
+                            | EventMask.PointerMotion)
+    qtile.core._root.set_attribute(eventmask=qtile.core.eventmask)
 
     def screen_change(event):
         """Check screen under mouse if mouse over root window and change focus accordingly"""
@@ -32,13 +34,14 @@ def mouse_move(qtile):
                     if index_under_mouse != qtile.current_screen.index:
                         qtile.focus_screen(index_under_mouse, warp=False)
         qtile.process_button_motion(event.event_x, event.event_y)
-    setattr(qtile.core, "handle_MotionNotify", screen_change) 
+    setattr(qtile.core, "handle_MotionNotify", screen_change)
 
+####
 
 def border_snap(window):
     #log_test("starting")
     def cmd_set_position_floating( x, y, border_snapping=False, snap_dist=10): #window,
-        log_test("set_pos")
+        #log_test("set_pos")
         """Move floating window to x and y.
         Border snapping makes floating window's borders
         stick to other borders for easy alignment
@@ -95,4 +98,64 @@ def border_snap(window):
     setattr(window, "_borders_touch", _borders_touch)
     setattr(window, "cmd_set_position_floating", cmd_set_position_floating)
     #log_test("finishing")
+
+####
+
+def simple_start_menu():
+    #https://github.com/m-col/qtile-config/blob/master/notification.py
+    try:
+        #log_test(1)
+        popup = Popup(qtile, background="#002200", x=0, y=24, width=100, height=50, font_size=10, border="#ff00ff", border_width=1,
+                    foreground="#ffffff", opacity=0.9)
+
+        popup.place()
+        popup.unhide()
+        popup.text = "Reboot    Shutdown"
+        popup.draw_text(x=2, y=popup.height-popup.font_size-1)  # TODO don't hard code this
+        #log_test(2)
+        popup.draw()
+        #log_test(3)
+        #popup.win.window.set_property("_NET_WM_STATE", "Above")
+        popup.win.window.set_property("_NET_WM_NAME", "simple start menu")
+        popup.win.update_name()
+
+        try:  # TODO simplify this mess
+            icon_file_list = ["/usr/share/icons/breath2-dark/actions/24/system-reboot.svg",
+                              "/usr/share/icons/breath2-dark/actions/24/system-shutdown.svg"]
+            icon_list = [images.Img.from_path(f) for f in icon_file_list]
+            [i.resize(height=popup.height) for i in icon_list]
+            surface_list = []
+            for x in icon_list:
+                s, _ = images._decode_to_image_surface(x.bytes_img, x.width, x.height)
+                surface_list.append(s)
+            [popup.draw_image(s, int(popup.width/len(surface_list))*i, -5) for i, s in enumerate(surface_list)]
+            #log_test(4)
+        except Exception as e:
+            log_test("image_load error: {0}".format(e))
+
+        def click(x, y, button):
+            action_list = ["systemctl reboot", "systemctl poweroff"]
+            try:
+                if button == 1:
+                    x_pos = int(x/popup.width*len(action_list))
+                    #log_test("clicked on: " + action_list[x_pos])
+                    qtile.cmd_spawn(action_list[x_pos])
+                else:
+                    popup.hide()
+                    popup.kill()
+            except Exception as e:
+                log_test("click error: {0}".format(e))
+        popup.win.process_button_click = click
+
+        def leave(*args):
+            try:
+                #log_test(args)
+                popup.hide()
+                popup.kill()
+            except Exception as e:
+                log_test("leave error: {0}".format(e))
+        popup.win.process_pointer_leave = leave
+    except Exception as e:
+        log_test("popup_test error: {0}".format(e))
+
     
