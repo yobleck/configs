@@ -178,17 +178,16 @@ surf(){
     elif [ -z "$1" ]; then
         echo "no map supplied, defaulting to surf_utopia_njv"
         echo "running dedicated server, launching steam and running CS:S"
-        konsole --new-tab -e /home/yobleck/.steam/steamcmd/css/srcds_run -console -game cstrike -maxplayers 32 -port 27015 -sv_airaccelerate 150 +map surf_utopia_njv &
-        disown
-        steam -applaunch 240 +connect 10.0.0.136:27015 &
-        disown
+        tmux new-session "/home/yobleck/.steam/steamcmd/css/srcds_run -console -game cstrike \
+                          -maxplayers 32 -port 27015 -tickrate 100 -sv_airaccelerate 150 +map surf_utopia_njv" \; \
+        split-window "steam -applaunch 240 +connect 10.0.0.136:27015"
     else
         echo "running dedicated server with map $1, launching steam and running CS:S"
-        konsole --new-tab -e /home/yobleck/.steam/steamcmd/css/srcds_run -console -game cstrike -maxplayers 32 -port 27015 -sv_airaccelerate 150 +map $1 &
-        disown
-        steam -applaunch 240 +connect 10.0.0.136:27015 &
-        disown
+        tmux new-session "/home/yobleck/.steam/steamcmd/css/srcds_run -console -game cstrike \
+                          -maxplayers 32 -port 27015 -tickrate 100 -sv_airaccelerate 150 +map $1" \; \
+        split-window "steam -applaunch 240 +connect 10.0.0.136:27015"
     fi
+    echo "successful shutdown"
 }
 export -f surf
 
