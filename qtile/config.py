@@ -26,18 +26,19 @@
 # SOFTWARE.
 
 from typing import List  # noqa: F401
+#import subprocess, time
 
 from xcffib.xproto import EventMask
 
 from libqtile import bar, layout, widget, extension, hook, qtile
 from libqtile.config import Click, Drag, Group, Key, Match, Screen  # , KeyChord
 from libqtile.lazy import lazy
-from libqtile.utils import guess_terminal  # , send_notification
+from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
 import internal_modifications as int_mod
 
 
-# Helper functions
+###Helper functions###
 def log_test(i):
     f = open("/home/yobleck/qtile_log.txt", "a")
     f.write(str(i) + "\n")
@@ -50,7 +51,30 @@ def vsync_toggle(x):
     pass
 
 
-#import subprocess;
+def toggle_bar(qtile, *args):  # Helper function for bar visibility
+    qtile.cmd_hide_show_bar(*args)
+
+
+def parse(text):  # Function for editing displayed wm_name
+    for string in [" - YouTube", " \u2014 Mozilla Firefox", " \u2014 Konsole", "  \u2014 Kate", " \u2014 Dolphin", " - Chromium",
+                   "Media Player Classic Qute Theater - "]:
+        text = text.replace(string, "")
+    return text
+
+
+def cycle_wallpaper(qtile):  # cycle between main wallpaper and black
+    if qtile.current_screen.wallpaper == "/home/yobleck/Pictures/382337_4k_dn.png":
+        qtile.current_screen.wallpaper = "/home/yobleck/Pictures/black.png"
+    elif qtile.current_screen.wallpaper == "/home/yobleck/Pictures/black.png":
+        qtile.current_screen.wallpaper = "/home/yobleck/Pictures/382337_4k_dn.png"
+    
+    qtile.paint_screen(qtile.current_screen, qtile.current_screen.wallpaper, qtile.current_screen.wallpaper_mode)
+
+
+simple_start_menu = int_mod.simple_start_menu  # popup window for reboot/shutdown
+
+
+###HOOKS###
 @hook.subscribe.startup_once
 def initial_startup_stuff():
     # TODO: move all this stuff to a bash script to improve startup times?
@@ -98,89 +122,61 @@ def initial_startup_stuff():
 def startup_stuff():
     #subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
     qtile.cmd_spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
+    int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
 
-    int_mod.mouse_move(qtile)
-
-
+import time
 @hook.subscribe.startup_complete
 def startup_complete_stuff():
-    for s in qtile.screens:
+    log_test("hiding top bar")
+    time.sleep(1)
+    for s in qtile.screens:  # TODO not working on first startup. Qtile v0.18.1
         if s.height == 1440:
             s.top.show(is_show=False)  # Hide top bar by default
+            # s.group.layout_all()  # maybe this isnt running for some reason
 
 
 @hook.subscribe.shutdown
 def shutdown_stuff():
     #kill or restart sddm. not needed with ly
-    #or systemctl poweroff
-    #kill xbindkeys and mocp server and xautolock
+    #kill xbindkeys and xautolock
     pass
 
 
-#import time
 @hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
 def kde_widgets(window):
-    if(window.window.get_wm_class()[1] == "plasmawindowed"):
-        #log_test("passed wm_class test")
-        #log_test(window.window.get_name())
-        #https://github.com/qtile/qtile/blob/master/libqtile/backend/x11/window.py
+    if(window.window.get_wm_class()[0] == "plasmawindowed"):
         #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
         #time.sleep(0.5);
         if(window.window.get_name() == "Calendar"):
             #log_test("passed Cal name test")
             #qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193") # NOTE wmctrl uninstalled
-            qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 225 193 windowmove 2333 1221")
+            qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 250 250 windowmove 2310 1166")
             #below doesnt respect different widgets
             #window.cmd_set_position_floating(2333, 1221)
             #window.cmd_set_size_floating(225, 193)
 
-        if(window.window.get_name() == "Legacy Application Launcher"):
-            #log_test("passed App menu name test")
+        #if(window.window.get_name() == "Legacy Application Launcher"):  # TODO use setattr to change win.win process_pointer_leave to close window
+            #time.sleep(0.5)
             #qtile.cmd_spawn("wmctrl -r \'Application Menu\' -e 0,0,949,273,467")  # old new menu
-            qtile.cmd_spawn("xdotool search \"Legacy Application Launcher\" windowsize 416 544 windowmove 0 869")  # windowsize 416 544
+            #qtile.cmd_spawn("xdotool search \"Legacy Application Launcher\" windowsize 468 612 windowmove 0 802")  # windowsize 416 544
+        
+        if(window.window.get_name() == "Audio Volume"):
+            #time.sleep(0.5);
+            qtile.cmd_spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
     
     # Adds border snapping to floating windows
     int_mod.border_snap(window)
 
-
 #TODO:mouse callback on bar widgets?
-
 
 ###KEY BINDS###
 mod = "mod4"
 terminal = guess_terminal()
-"""
-from time import sleep
-from libqtile.popup import Popup
-def popup_test(qtile):
-    try:
-        send_notification("popup_test_1", "this is test #1")
-        popup = Popup(qtile, background="#005500", width=500, height=500, font_size=64, border="#0000ff", border_width=5,
-                    foreground="#ffffff", opacity=0.8)
-        #popup.layout.text = "hello world"
-        #popup.layout.text = "henlo"
-        #popup.drawer.textlayout(text="hello world",colour=popup.foreground,font_family=popup.font,
-                                #font_size=popup.font_size,font_shadow=popup.fontshadow).draw(x=50,y=50)
-        #popup.drawer.draw(width=100)
-        
-        popup.place()
-        popup.draw_text(x=50, y=50)
-        popup.draw()
-        popup.unhide()
-        sleep(5)
-        popup.kill()
-        send_notification("popup_test_2", str(popup.layout.text))
-    except Exception as e:
-        send_notification("er", str(e))
-"""
-
-
-def toggle_bar(qtile, *args):
-    qtile.cmd_hide_show_bar(*args)
 
 
 keys = [
-    # Key([mod], "o", lazy.function(popup_test), desc="popup"),
+    # Key([mod], "o", lazy.function(cycle_wallpaper), desc="popup"),
+    # Key([mod, "shift"], "o", lazy.function(kill_popup), desc="popup"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
         desc="Move focus down in stack pane"),
@@ -231,6 +227,7 @@ keys = [
         desc="toggle nvidia ForceCompositionPipeline"),
     Key([mod, "control"], "b", lazy.function(toggle_bar, "bottom"), desc="toggle bar visibility"),
     Key([mod, "control"], "t", lazy.function(toggle_bar, "top"), desc="toggle bar visibility"),
+    Key([mod, "control"], "c", lazy.function(cycle_wallpaper), desc="cycle main and black wallpaper"),
 
     # Volume control
     Key([], "XF86AudioRaiseVolume",
@@ -253,7 +250,9 @@ keys = [
         Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
         Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
         Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
+        Key(["control", "mod1"], "p", lazy.spawn("spectacle"), desc="launch scpectacle"),
         Key([mod], "3270_PrintScreen", lazy.spawn("spectacle"), desc="launch scpectacle"),
+        # mod + . for emoji selector
     #]),
     # lock screen #https://github.com/Raymo111/i3lock-color/blob/master/examples/lock.sh
     #Key([mod], "l", lazy.spawn("i3lock -n --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\""),
@@ -269,10 +268,10 @@ groups = []
 groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
 groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py", matches=[Match(wm_class=["dolphin"])]))
 groups.append(Group("F@H", layout="stack", spawn=["konsole", "FAHControl"]))
-groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
+#groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
 groups.append(Group("game", matches=[Match(wm_class=["Steam", "MultiMC5", "hl2_linux"])]))  # TODO: add video game match rules
 
-g_list = {"web": "a", "2nd": "s", "F@H": "d", "htop": "f", "game": "g"}
+g_list = {"web": "a", "2nd": "s", "F@H": "d", "game": "f"}  # "htop": "f",
 for g in g_list.items():
     keys.extend([
         Key([mod], g[1], lazy.group[g[0]].toscreen(toggle=False),
@@ -311,12 +310,6 @@ widget_defaults = dict(
 extension_defaults = widget_defaults.copy()
 
 
-# Function for editing displayed wm_name
-def parse(text):
-    for string in [" - YouTube", " \u2014 Mozilla Firefox", " \u2014 Konsole", "  \u2014 Kate", " \u2014 Dolphin", " - Chromium",
-                   "Media Player Classic Qute Theater - "]:
-        text = text.replace(string, "")
-    return text
 
 
 screens = [
@@ -359,10 +352,9 @@ screens = [
                 #widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(0)}, font="Noto Mono"),
             ],
             24,
-            #opacity=0.5,
             background=["#00000000", "#00000022", "#00000055", "#00330088"],  # bar background
         ),
-        wallpaper="~/Pictures/382337_4k_dn.png",
+        wallpaper="/home/yobleck/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
         #width=1920,
         #height=1080,
@@ -373,8 +365,8 @@ screens = [
             [
                 #widget.LaunchBar(progs=[("start", "plasmawindowed org.kde.plasma.kicker", "kde start menu")],
                                  #default_icon="/usr/share/icons/manjaro/maia/maia.svg"),
-                widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",  # green.svg
-                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.kickofflegacy")}),
+                #widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",  # green.svg
+                             #mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.kickofflegacy")}),
                 widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
                                                                                               "Button4": lambda: qtile.cmd_prev_layout(),
                                                                                               "Button5": lambda: qtile.cmd_next_layout()
@@ -398,7 +390,8 @@ screens = [
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
-                              foreground="#00aa00", font="Noto Mono"
+                              foreground="#00aa00", font="Noto Mono",
+                              mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.volume")}
                               ),
                 widget.Clock(format='%a %H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
@@ -406,24 +399,29 @@ screens = [
                 #widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(1)}, font="Noto Mono"),
             ],
             24,
-            #opacity=0.9,
             background=["#00000000", "#00000022", "#00000055", "#00330088"],  # bar background
         ),
         top=bar.Bar(
             [
+                widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",
+                             mouse_callbacks={"Button1": simple_start_menu}),
                 widget.Spacer(),
-                widget.CPU(foreground="#00aa00", font="Noto Mono", format="CPU: {freq_current}GHz {load_percent}%", update_interval=2),
-                widget.CPUGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
-                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:.0f}{mm}/{MemTotal:.0f}{mm}", update_interval=2),
-                widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=2),
-                widget.NetGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
+                # TODO kde system settings icon
+                widget.Image(filename="/usr/share/icons/breath2-dark/apps/48/utilities-system-monitor.svg",
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}),
+                widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {freq_current}GHz {load_percent}%", update_interval=1),
+                # TODO thermal sensor switching to psutil in next update
+                widget.CPUGraph(frequency=1, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
+                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:.0f}{mm}/{MemTotal:.0f}{mm}", update_interval=1),
+                widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=1),
+                widget.NetGraph(frequency=1, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", font="Noto Mono",
                                      threshold=80, update_interval=2),
             ],
             24,
             background=["#00330088", "#00000055", "#00000022", "#00000000"],
         ),
-        wallpaper="~/Pictures/382337_4k_dn.png",
+        wallpaper="/home/yobleck/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
         #width=2560,
         #height=1440,
@@ -481,8 +479,8 @@ floating_layout = layout.Floating(float_rules=[
 
 auto_fullscreen = True
 focus_on_window_activation = "smart"
-#reconfigure_screens = True; #doesn't work with changes through nvidia settings?
-#auto_minimize = True; #some games auto min when focus lost
+#reconfigure_screens = True  # doesn't work with changes through nvidia settings?
+auto_minimize = True  # some games auto min when focus lost
 
 
 # XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
