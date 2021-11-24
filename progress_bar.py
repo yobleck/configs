@@ -32,8 +32,8 @@ def progress_bar(percentage, bar_length=20, progress_sym="#", remainder_sym=" ",
 #first argument after file name is t for timer or p for percentage bar. second argument is the duration of timer or percentage respectively
 if __name__ == "__main__":
     if(len(sys.argv) > 1):
-        if(sys.argv[1] == "t"):
+        if(sys.argv[1] in ["t", "-t", "--timer"]):
             timer_bar(sys.argv[2]);
-        if(sys.argv[1] == "p"):
-            progress_bar(sys.argv[2]);
+        if(sys.argv[1] in ["p", "-p", "--progress"]):
+            progress_bar(float(sys.argv[2]));
     #globals()[sys.argv[1]](sys.argv[2]);
