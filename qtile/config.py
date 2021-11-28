@@ -72,6 +72,7 @@ def cycle_wallpaper(qtile):  # cycle between main wallpaper and black
 
 
 simple_start_menu = int_mod.simple_start_menu  # popup window for reboot/shutdown
+simple_repl = int_mod.simple_repl
 
 
 ###HOOKS###
@@ -124,15 +125,26 @@ def startup_stuff():
     qtile.cmd_spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
     int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
 
-import time
+#import time
 @hook.subscribe.startup_complete
 def startup_complete_stuff():
+    pass
+    """
     log_test("hiding top bar")
-    time.sleep(1)
+    log_test(qtile.current_screen.height)
+    qtile.focus_screen(1, warp = False)
+    log_test(qtile.current_screen.height)
     for s in qtile.screens:  # TODO not working on first startup. Qtile v0.18.1
         if s.height == 1440:
-            s.top.show(is_show=False)  # Hide top bar by default
-            # s.group.layout_all()  # maybe this isnt running for some reason
+            log_test(s.get_rect())
+            #qtile.cmd_hide_show_bar("top")
+            toggle_bar(qtile, "top")
+            #s.top.show(is_show=False)  # Hide top bar by default
+            #s.group.layout_all()  # maybe this isnt running for some reason
+            #qtile.current_group().layout_all()
+            log_test(s.get_rect())
+            log_test("top bar hidden")
+            #pass"""
 
 
 @hook.subscribe.shutdown
@@ -170,12 +182,12 @@ def kde_widgets(window):
 #TODO:mouse callback on bar widgets?
 
 ###KEY BINDS###
-mod = "mod4"
+mod = "mod4"  # TODO change to meta
 terminal = guess_terminal()
 
 
 keys = [
-    # Key([mod], "o", lazy.function(cycle_wallpaper), desc="popup"),
+    # Key([mod], "o", lazy.function(pass_qtile_test), desc="popup"),
     # Key([mod, "shift"], "o", lazy.function(kill_popup), desc="popup"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
@@ -217,7 +229,7 @@ keys = [
     Key([mod, "shift"], "Tab", lazy.prev_layout(), desc="Toggle between layouts backwards"),
     Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
 
-    Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),
+    Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),  # TODO replace with cmd_reload_config when available
     Key([mod, "control", "shift"], "q", lazy.shutdown(), desc="Shutdown qtile"),
     Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
@@ -406,6 +418,8 @@ screens = [
                 widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",
                              mouse_callbacks={"Button1": simple_start_menu}),
                 widget.Spacer(),
+                widget.Image(filename="/usr/share/icons/breeze-dark/apps/48/pythonbackend.svg",
+                             mouse_callbacks={"Button1": simple_repl}),
                 # TODO kde system settings icon
                 widget.Image(filename="/usr/share/icons/breath2-dark/apps/48/utilities-system-monitor.svg",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}),
@@ -469,7 +483,10 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="plasmawindowed"),
     Match(wm_class="Panda3D"),
     Match(wm_class="Xephyr"),
+    Match(wm_class="Vncviewer"),
+    Match(wm_class="Visualboyadvance-m"),
     Match(title="Event Tester"),
+    Match(title="Default - Wine desktop"),
 ],
     no_reposition_rules=[  # TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
         Match(wm_class="FAHStats"),
