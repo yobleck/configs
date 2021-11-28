@@ -1,3 +1,7 @@
+import sys
+from importlib import metadata
+import io
+
 from xcffib.xproto import EventMask
 
 from libqtile import qtile, images
@@ -103,6 +107,8 @@ def border_snap(window):
 
 def simple_start_menu():
     #https://github.com/m-col/qtile-config/blob/master/notification.py
+    #TODO move definitions outside of this function so that they are only called once
+    #i.e. popup = should be outside but popup.place should remain
     try:
         #log_test(1)
         popup = Popup(qtile, background="#002200", x=0, y=24, width=100, height=50, font_size=10, border="#ff00ff", border_width=1,
@@ -158,4 +164,114 @@ def simple_start_menu():
     except Exception as e:
         log_test("popup_test error: {0}".format(e))
 
-    
+####
+
+def simple_repl():
+    try:
+        popup = Popup(qtile, background="#000000", x=1280, y=720, width=500, height=500, font="Noto Mono", font_size=12,
+                      border=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], border_width=5,
+                      foreground="#ffffff", opacity=0.90)
+
+        popup.layout.markup = False  # TODO PR to add this to popup options
+        popup.place()
+        popup.unhide()
+
+        num_cols = popup.width//8  # 8 assumes Noto Mono font at size 12
+        num_rows = popup.width//17  # ditto
+        nl = "\n"
+        old_text = ["Yobleck's simple python REPL (click to focus, esc to quit)", f"Qtile: {metadata.distribution('qtile').version}",
+                    f"Python: {sys.version.replace(nl, '')}", ">>> "]
+        new_text = ""
+        popup.text = lines_to_text(old_text)
+        popup.draw_text(x=5, y=5)
+        popup.draw()
+
+        def key_press(keycode):
+            try:
+                nonlocal new_text
+                nonlocal old_text
+                keychr = chr(keycode)
+                log_test(f"key {keycode}={keychr} pressed")  # TODO convert keycodes to text
+
+                if keycode == 65307:  # escape
+                    leave()
+                    return
+                elif keycode == 65293:  # enter
+                    if new_text in ["exit", "exit()", "quit", "quit()"]:  # WARNING will eval("quit()") kill qtile?
+                        leave()
+                        return
+                    elif new_text in ["clear", "cls"]:  # clear screen
+                        old_text = [">>> "]
+                        new_text = ""
+                    else:
+                        #old_text += new_text + "\n" + _simple_eval_exec(new_text) + ">>> "  # append input text, eval and append results
+                        old_text[-1] += new_text
+                        old_text.extend([ _simple_eval_exec(new_text), ">>> "])
+                        new_text = ""
+                elif keycode == 65288:  # backspace
+                    new_text = new_text[:-1]
+                elif keycode in [65505, 65507, 65508, 65506, 65513, 65514, 65515]:  # range(65505, 65518) for mod keys?
+                    pass  # ignore modifiers and other non text keys
+                else:
+                    new_text += keychr
+
+                popup.clear()
+                popup.text = lines_to_text(old_text) + new_text  # TODO line wrap and scrolling
+                popup.draw_text(x=5, y=5)
+                popup.draw()
+                popup.text = lines_to_text(old_text)
+            except Exception as e:
+                log_test("key press error: {0}".format(e))
+        popup.win.process_key_press = key_press
+
+        def leave(*args):
+            try:
+                log_test("pointer leave")
+                popup.hide()
+                popup.kill()
+            except Exception as e:
+                log_test("pointer leave error: {0}".format(e))
+        popup.win.process_pointer_leave = leave
+        
+        # focus window
+        def b_press(x, y, button):  # two functions cause mouse click doesn't work with *args
+            try:
+                popup.win.focus(warp=False)
+                log_test(f"button {button} clicked")
+            except Exception as e:
+                log_test("button click error: {0}".format(e))
+        popup.win.process_button_click = b_press
+        def enter(*args):
+            try:
+                popup.win.focus(warp=False)
+                log_test("pointer enter")
+            except Exception as e:
+                log_test("pointer enter error: {0}".format(e))
+        popup.win.process_pointer_enter = enter
+
+    except Exception as e:
+        log_test("repl error: {0}".format(e))
+
+def lines_to_text(in_list):#, num_cols, num_rows):
+    out_str = "\n".join(in_list)
+    return out_str
+
+def _simple_eval_exec(_some_long_var_name):
+    try:
+        old_stdout = sys.stdout  # capture stdout and convert to string. WARNING may leave stdout in weird state
+        sys.stdout = io.StringIO()
+        output1 = eval(_some_long_var_name, globals(), locals())
+        output2 = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        #log_test("out1: " + str(output1) + " out2: " +str(output2))
+        return "".join(x for x in [str(output1), output2] if x != "None") #str(output1) + "\n" + str(output2) # 
+    except Exception as e:
+        sys.stdout = old_stdout
+        if isinstance(e, SyntaxError):
+            exec(_some_long_var_name)
+            return "temp read only. creating and changing vars might crash qtile\n"
+        else:
+            return str(e)
+    else:
+        sys.stdout = old_stdout
+        return "idk when this runs. if you're reading this something weird happened"
