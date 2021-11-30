@@ -29,7 +29,7 @@ def mouse_move(qtile):
 
     def screen_change(event):
         """Check screen under mouse if mouse over root window and change focus accordingly"""
-        assert qtile is not None
+        assert qtile is not None  # crash if no qtile?
         if qtile.config.follow_mouse_focus and not qtile.config.cursor_warp:
             if hasattr(event, "root_x") and hasattr(event, "root_y"):
                 screen = qtile.find_screen(event.root_x, event.root_y)
@@ -137,7 +137,7 @@ def simple_start_menu():
             [popup.draw_image(s, int(popup.width/len(surface_list))*i, -5) for i, s in enumerate(surface_list)]
             #log_test(4)
         except Exception as e:
-            log_test("image_load error: {0}".format(e))
+            log_test(f"image_load error: {e}")
 
         def click(x, y, button):
             action_list = ["systemctl reboot", "systemctl poweroff"]
@@ -150,7 +150,7 @@ def simple_start_menu():
                     popup.hide()
                     popup.kill()
             except Exception as e:
-                log_test("click error: {0}".format(e))
+                log_test(f"click error: {e}")
         popup.win.process_button_click = click
 
         def leave(*args):
@@ -159,48 +159,76 @@ def simple_start_menu():
                 popup.hide()
                 popup.kill()
             except Exception as e:
-                log_test("leave error: {0}".format(e))
+                log_test(f"leave error: {e}")
         popup.win.process_pointer_leave = leave
     except Exception as e:
-        log_test("popup_test error: {0}".format(e))
+        log_test(f"popup_test error: {e}")
 
 ####
 
 def simple_repl():
     try:
-        popup = Popup(qtile, background="#000000", x=1280, y=720, width=500, height=500, font="Noto Mono", font_size=12,
-                      border=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], border_width=5,
-                      foreground="#ffffff", opacity=0.90)
+        popup = Popup(qtile, background="#000000", foreground="#00aa00", x=1280, y=720, width=500, height=500, font="Noto Mono", font_size=12,
+                      border=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], border_width=5, opacity=0.90, wrap=True)
 
         popup.layout.markup = False  # TODO PR to add this to popup options
+        popup.layout.width = popup.width  # actually enforce line wrap. see PR above
         popup.place()
         popup.unhide()
 
-        num_cols = popup.width//8  # 8 assumes Noto Mono font at size 12
-        num_rows = popup.width//17  # ditto
+        #num_cols = popup.width//8  # 8 assumes Noto Mono font at size 12
+        #num_rows = popup.height//15  # ditto
         nl = "\n"
-        old_text = ["Yobleck's simple python REPL (click to focus, esc to quit)", f"Qtile: {metadata.distribution('qtile').version}",
+        old_text = ["Yobleck's simple python REPL (click to focus, esc to quit, F5/'cls'/'clear' to reset screen)",
+                    f"Qtile: {metadata.distribution('qtile').version}",
                     f"Python: {sys.version.replace(nl, '')}", ">>> "]
         new_text = ""
-        popup.text = lines_to_text(old_text)
-        popup.draw_text(x=5, y=5)
+        popup.text = lines_to_text(old_text) #[-num_rows:]
+        draw_y = 2
+        popup.draw_text(x=2, y=draw_y)
         popup.draw()
+        #globals()["tert"] = "terting"
+        history = []  # command history for this popup instance. save across session with global var?
+        history_index = -1  # is there a way to do this without the var?
 
         def key_press(keycode):
             try:
                 nonlocal new_text
                 nonlocal old_text
+                nonlocal draw_y
+                nonlocal history_index
                 keychr = chr(keycode)
                 log_test(f"key {keycode}={keychr} pressed")  # TODO convert keycodes to text
 
                 if keycode == 65307:  # escape
                     leave()
                     return
+                elif keycode == 65474:  # F5 to clear screen
+                    old_text = [">>> "]
+                    new_text = ""
+                # scrolling
+                elif keycode == 65366:  # page down
+                    draw_y -= 5
+                elif keycode == 65365:  # page up
+                    draw_y += 5
+                elif keycode == 65288:  # backspace
+                    new_text = new_text[:-1]
+                # history
+                elif keycode in [65362, 65364]:  # up/down arrow keys. TODO double check with another non 60% keyboard
+                    if history:
+                        if keycode == 65362 and history_index < len(history)-1:
+                            history_index += 1
+                            new_text = history[history_index]
+                        elif keycode == 65364 and history_index > 0:
+                            history_index -= 1
+                            new_text = history[history_index]
                 elif keycode == 65293:  # enter
-                    if new_text in ["exit", "exit()", "quit", "quit()"]:  # WARNING will eval("quit()") kill qtile?
+                    history.insert(0, new_text)
+                    history_index = -1
+                    if new_text in ["exit", "exit()", "quit", "quit()"]:  # exit commands. WARNING will eval("quit()") kill qtile?
                         leave()
                         return
-                    elif new_text in ["clear", "cls"]:  # clear screen
+                    elif new_text in ["clear", "cls"]:  # clear screen commands
                         old_text = [">>> "]
                         new_text = ""
                     else:
@@ -208,30 +236,29 @@ def simple_repl():
                         old_text[-1] += new_text
                         old_text.extend([ _simple_eval_exec(new_text), ">>> "])
                         new_text = ""
-                elif keycode == 65288:  # backspace
-                    new_text = new_text[:-1]
                 elif keycode in [65505, 65507, 65508, 65506, 65513, 65514, 65515]:  # range(65505, 65518) for mod keys?
-                    pass  # ignore modifiers and other non text keys
+                    pass  # ignore modifiers and other non text keys. TODO modifier list that is cleared after non modifier is pressed. act on list?
                 else:
                     new_text += keychr
 
+                # actually drawing text
                 popup.clear()
-                popup.text = lines_to_text(old_text) + new_text  # TODO line wrap and scrolling
-                popup.draw_text(x=5, y=5)
+                popup.text = lines_to_text(old_text) + new_text  # TODO scroll to bottom after hitting enter
+                popup.draw_text(x=2, y=draw_y)
                 popup.draw()
-                popup.text = lines_to_text(old_text)
+                popup.text = lines_to_text(old_text) #[-num_rows:] [-num_rows:]
             except Exception as e:
-                log_test("key press error: {0}".format(e))
+                log_test(f"key press error: {e}")
         popup.win.process_key_press = key_press
 
-        def leave(*args):
+        def leave(*args):  # close window when mouse leaves
             try:
                 log_test("pointer leave")
                 popup.hide()
                 popup.kill()
             except Exception as e:
-                log_test("pointer leave error: {0}".format(e))
-        popup.win.process_pointer_leave = leave
+                log_test(f"pointer leave error: {e}")
+        #popup.win.process_pointer_leave = leave
         
         # focus window
         def b_press(x, y, button):  # two functions cause mouse click doesn't work with *args
@@ -239,20 +266,20 @@ def simple_repl():
                 popup.win.focus(warp=False)
                 log_test(f"button {button} clicked")
             except Exception as e:
-                log_test("button click error: {0}".format(e))
+                log_test(f"button click error: {e}")
         popup.win.process_button_click = b_press
         def enter(*args):
             try:
                 popup.win.focus(warp=False)
                 log_test("pointer enter")
             except Exception as e:
-                log_test("pointer enter error: {0}".format(e))
+                log_test(f"pointer enter error: {e}")
         popup.win.process_pointer_enter = enter
 
     except Exception as e:
-        log_test("repl error: {0}".format(e))
+        log_test(f"repl error: {e}")
 
-def lines_to_text(in_list):#, num_cols, num_rows):
+def lines_to_text(in_list):
     out_str = "\n".join(in_list)
     return out_str
 
@@ -260,18 +287,22 @@ def _simple_eval_exec(_some_long_var_name):
     try:
         old_stdout = sys.stdout  # capture stdout and convert to string. WARNING may leave stdout in weird state
         sys.stdout = io.StringIO()
-        output1 = eval(_some_long_var_name, globals(), locals())
+        output1 = eval(_some_long_var_name, globals(), locals())  # TODO clean up the try except so they make more sense
         output2 = sys.stdout.getvalue()
         sys.stdout = old_stdout
         #log_test("out1: " + str(output1) + " out2: " +str(output2))
         return "".join(x for x in [str(output1), output2] if x != "None") #str(output1) + "\n" + str(output2) # 
     except Exception as e:
         sys.stdout = old_stdout
-        if isinstance(e, SyntaxError):
-            exec(_some_long_var_name)
-            return "temp read only. creating and changing vars might crash qtile\n"
+        if isinstance(e, SyntaxError) and "invalid syntax" in str(e):
+            try:
+                exec(_some_long_var_name, globals())  # how to capture results of exec and pass through to globals?
+                #globals()["xt"]=5
+                return "" #"temp read only. creating and changing vars might crash qtile"
+            except Exception as e:
+                return str(e)
         else:
             return str(e)
-    else:
-        sys.stdout = old_stdout
-        return "idk when this runs. if you're reading this something weird happened"
+    #else:
+        #sys.stdout = old_stdout
+        #return "idk when this runs. if you're reading this something weird happened"
