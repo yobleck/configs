@@ -277,8 +277,8 @@ def simple_repl():
                     popup.draw()
                     popup.text = lines_to_text(old_text)
                 elif button == 8:
-                    popup.win.place(popup.x+x-popup.width//2, popup.y+y-popup.height//2,
-                                    popup.width, popup.height, popup.border_width, popup.border)
+                    new_pos = (popup.x+x-popup.width//2, popup.y+y-popup.height//2)
+                    popup.win.place(new_pos[0], new_pos[1], popup.width, popup.height, popup.border_width, popup.border)
                     popup.x, popup.y = new_pos  # .place() doesn't change these
                 log_test(f"button {button} clicked")
             except Exception as e:
