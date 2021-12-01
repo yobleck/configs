@@ -184,7 +184,7 @@ def simple_repl():
                     f"Python: {sys.version.replace(nl, '')}", ">>> "]
         new_text = ""
         popup.text = lines_to_text(old_text) #[-num_rows:]
-        draw_y = 2
+        draw_y = 5
         popup.draw_text(x=2, y=draw_y)
         popup.draw()
         #globals()["tert"] = "terting"
@@ -263,7 +263,23 @@ def simple_repl():
         # focus window
         def b_press(x, y, button):  # two functions cause mouse click doesn't work with *args
             try:
-                popup.win.focus(warp=False)
+                nonlocal draw_y
+                if button == 1:
+                    popup.win.focus(warp=False)
+                elif button in [4,5]:
+                    if button == 4:  # mouse wheel up
+                        draw_y += 5
+                    elif button == 5:  # down
+                        draw_y -= 5
+                    popup.clear()  # NOTE DRY violation
+                    popup.text = lines_to_text(old_text) + new_text
+                    popup.draw_text(x=2, y=draw_y)
+                    popup.draw()
+                    popup.text = lines_to_text(old_text)
+                elif button == 8:
+                    popup.win.place(popup.x+x-popup.width//2, popup.y+y-popup.height//2,
+                                    popup.width, popup.height, popup.border_width, popup.border)
+                    popup.x, popup.y = new_pos  # .place() doesn't change these
                 log_test(f"button {button} clicked")
             except Exception as e:
                 log_test(f"button click error: {e}")
