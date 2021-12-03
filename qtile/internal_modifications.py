@@ -12,7 +12,7 @@ Avoid including `self`
 """
 
 def log_test(i):
-    f = open("/home/yobleck/qtile_log.txt", "a")
+    f = open("/home/yobleck/.config/qtile/qtile_log.txt", "a")
     f.write(str(i) + "\n")
     f.close()
 
@@ -183,13 +183,14 @@ def simple_repl():
                     f"Qtile: {metadata.distribution('qtile').version}",
                     f"Python: {sys.version.replace(nl, '')}", ">>> "]
         new_text = ""
-        popup.text = lines_to_text(old_text) #[-num_rows:]
+        popup.text = lines_to_text(old_text) + "\u2588" #[-num_rows:]
         draw_y = 5
         popup.draw_text(x=2, y=draw_y)
         popup.draw()
         #globals()["tert"] = "terting"
         history = []  # command history for this popup instance. save across session with global var?
         history_index = -1  # is there a way to do this without the var?
+        indentation_level = 0
 
         def key_press(keycode):
             try:
@@ -197,6 +198,7 @@ def simple_repl():
                 nonlocal old_text
                 nonlocal draw_y
                 nonlocal history_index
+                nonlocal indentation_level
                 keychr = chr(keycode)
                 log_test(f"key {keycode}={keychr} pressed")  # TODO convert keycodes to text
 
@@ -212,6 +214,8 @@ def simple_repl():
                 elif keycode == 65365:  # page up
                     draw_y += 5
                 elif keycode == 65288:  # backspace
+                    if new_text[-1] == "\n":
+                        indentation_level -= 1
                     new_text = new_text[:-1]
                 # history
                 elif keycode in [65362, 65364]:  # up/down arrow keys. TODO double check with another non 60% keyboard
@@ -225,17 +229,23 @@ def simple_repl():
                 elif keycode == 65293:  # enter
                     history.insert(0, new_text)
                     history_index = -1
-                    if new_text in ["exit", "exit()", "quit", "quit()"]:  # exit commands. WARNING will eval("quit()") kill qtile?
-                        leave()
-                        return
-                    elif new_text in ["clear", "cls"]:  # clear screen commands
-                        old_text = [">>> "]
-                        new_text = ""
-                    else:
-                        #old_text += new_text + "\n" + _simple_eval_exec(new_text) + ">>> "  # append input text, eval and append results
-                        old_text[-1] += new_text
-                        old_text.extend([ _simple_eval_exec(new_text), ">>> "])
-                        new_text = ""
+                    if new_text:
+                        if new_text in ["exit", "exit()", "quit", "quit()"] or "sys.exit" in new_text:
+                            # exit commands. WARNING will eval("quit()") kill qtile? sys.exit solution will kill regardless of conditionals
+                            leave()
+                            return
+                        elif new_text in ["clear", "cls"]:  # clear screen commands
+                            old_text = [">>> "]
+                            new_text = ""
+                        elif new_text[-1] == ":":
+                            indentation_level += 1
+                            new_text += "\n" + "    "*indentation_level
+                        else:
+                            #old_text += new_text + "\n" + _simple_eval_exec(new_text) + ">>> "  # append input text, eval and append results
+                            old_text[-1] += new_text
+                            old_text.extend([ _simple_eval_exec(new_text), ">>> "])
+                            new_text = ""
+                            indentation_level = 0
                 elif keycode in [65505, 65507, 65508, 65506, 65513, 65514, 65515]:  # range(65505, 65518) for mod keys?
                     pass  # ignore modifiers and other non text keys. TODO modifier list that is cleared after non modifier is pressed. act on list?
                 else:
@@ -243,7 +253,7 @@ def simple_repl():
 
                 # actually drawing text
                 popup.clear()
-                popup.text = lines_to_text(old_text) + new_text  # TODO scroll to bottom after hitting enter
+                popup.text = lines_to_text(old_text) + new_text + "\u2588"  # TODO scroll to bottom after hitting enter
                 popup.draw_text(x=2, y=draw_y)
                 popup.draw()
                 popup.text = lines_to_text(old_text) #[-num_rows:] [-num_rows:]
@@ -276,7 +286,7 @@ def simple_repl():
                     popup.draw_text(x=2, y=draw_y)
                     popup.draw()
                     popup.text = lines_to_text(old_text)
-                elif button == 8:
+                elif button == 8:  # move the window around (crudely)
                     new_pos = (popup.x+x-popup.width//2, popup.y+y-popup.height//2)
                     popup.win.place(new_pos[0], new_pos[1], popup.width, popup.height, popup.border_width, popup.border)
                     popup.x, popup.y = new_pos  # .place() doesn't change these
