@@ -40,7 +40,7 @@ import internal_modifications as int_mod
 
 ###Helper functions###
 def log_test(i):
-    f = open("/home/yobleck/qtile_log.txt", "a")
+    f = open("/home/yobleck/.config/qtile/qtile_log.txt", "a")
     f.write(str(i) + "\n")
     f.close()
 
@@ -180,15 +180,29 @@ def kde_widgets(window):
     int_mod.border_snap(window)
 
 #TODO:mouse callback on bar widgets?
+"""win_list = []
+def stick_win(qtile):
+    global win_list
+    win_list.append(qtile.current_window)
+    log_test(win_list)
+def unstick_win(qtile):
+    global win_list
+    if qtile.current_window in win_list:
+        win_list.remove(qtile.current_window)
+    log_test(win_list)
+@hook.subscribe.setgroup #setgroup?
+def move_win():
+    for w in win_list:
+        w.togroup(qtile.current_group.name)"""
+    
 
 ###KEY BINDS###
 mod = "mod4"  # TODO change to meta
 terminal = guess_terminal()
 
-
 keys = [
-    # Key([mod], "o", lazy.function(pass_qtile_test), desc="popup"),
-    # Key([mod, "shift"], "o", lazy.function(kill_popup), desc="popup"),
+    # Key([mod], "o", lazy.function(stick_win), desc="popup"),
+    # Key([mod, "shift"], "o", lazy.function(unstick_win), desc="popup"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
         desc="Move focus down in stack pane"),
@@ -262,8 +276,9 @@ keys = [
         Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
         Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
         Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
+        Key(["control", "mod1"], "Escape", lazy.spawn("ksysguard"), desc="launch task manager"),
         Key(["control", "mod1"], "p", lazy.spawn("spectacle"), desc="launch scpectacle"),
-        Key([mod], "3270_PrintScreen", lazy.spawn("spectacle"), desc="launch scpectacle"),
+        Key([mod], "Print", lazy.spawn("spectacle"), desc="launch scpectacle"),
         # mod + . for emoji selector
     #]),
     # lock screen #https://github.com/Raymo111/i3lock-color/blob/master/examples/lock.sh
@@ -415,13 +430,14 @@ screens = [
         ),
         top=bar.Bar(
             [
-                widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",
+                widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
                              mouse_callbacks={"Button1": simple_start_menu}),
                 widget.Spacer(),
-                widget.Image(filename="/usr/share/icons/breeze-dark/apps/48/pythonbackend.svg",
+                widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg",
                              mouse_callbacks={"Button1": simple_repl}),
                 # TODO kde system settings icon
-                widget.Image(filename="/usr/share/icons/breath2-dark/apps/48/utilities-system-monitor.svg",
+                widget.TextBox(" ", foreground="#00aa00"),
+                widget.Image(filename="/home/yobleck/.config/qtile/icons/utilities-system-monitor.svg",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}),
                 widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {freq_current}GHz {load_percent}%", update_interval=1),
                 # TODO thermal sensor switching to psutil in next update
