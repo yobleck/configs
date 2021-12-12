@@ -126,8 +126,8 @@ def simple_start_menu():
         popup.win.update_name()
 
         try:  # TODO simplify this mess
-            icon_file_list = ["/usr/share/icons/breath2-dark/actions/24/system-reboot.svg",
-                              "/usr/share/icons/breath2-dark/actions/24/system-shutdown.svg"]
+            icon_file_list = ["/home/yobleck/.config/qtile/icons/system-reboot.svg",
+                              "/home/yobleck/.config/qtile/icons/system-shutdown.svg"]
             icon_list = [images.Img.from_path(f) for f in icon_file_list]
             [i.resize(height=popup.height) for i in icon_list]
             surface_list = []
