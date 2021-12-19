@@ -21,24 +21,44 @@ def log_test(i):  # TODO replace with official qtile logging
 class REPL(base._TextBox):
     """A flexible textbox that can be updated from bound keys, scripts, and qshell."""
     defaults = [
-        ("font", "sans", "Text font"),
+        ("font", "sans", "Text font."),
         ("fontsize", None, "Font pixel size. Calculated if None."),
-        ("fontshadow", None, "font shadow color, default is None(no shadow)"),
+        ("fontshadow", None, "font shadow color, default is None(no shadow)."),
         ("padding", None, "Padding left and right. Calculated if None."),
         ("foreground", "#ffffff", "Foreground colour."),
+        ("win_pos", (0,0), "Initial window coordinates as tuple (x, y)."),
+        ("win_size", (500,500), "Window size as tuple (w, h)."),
+        ("win_bordercolor", "#ff0000", "Window border color. Can be list of multiple values."),
+        ("win_borderwidth", 2, "Window Border width."),
+        ("win_foreground", "#ffffff", "Window text color"),
+        ("win_background", "#000000", "Window background color"),
+        ("win_opacity", 1, "Window opacity."),
+        ("win_font", "sans", "Window text font."),
+        ("win_fontsize", 12, "Window font pixel size. Calculated if None."),
+        ("win_fontshadow", None, "Window font shadow color, default is None(no shadow)."),
+        ("win_mousebutton_move", 3, "Mouse button that when clicked on repl window causes it to re-center under mouse."),
     ]
 
     def __init__(self, text="PY REPL", width=bar.CALCULATED, **config):
         base._TextBox.__init__(self, text=text, width=width, **config)
-
+        self.add_defaults(REPL.defaults)
         self.add_callbacks({"Button1": self.open_win, "Button3":self.leave})
+        self.og_bartext = self.text
+        self.text = "_" + self.text
         self.win_opened = False
 
     def _configure(self, qtile, bar):
         base._TextBox._configure(self, qtile, bar)
 
-        self.popup = Popup(qtile, background="#000000", foreground="#00aa00", x=1280, y=720, width=500, height=500, font="Noto Mono", font_size=12,
-                      border=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], border_width=5, opacity=0.90, wrap=True)
+        #self.popup = Popup(qtile, background="#000000", foreground="#00aa00", x=1280, y=720, width=500, height=500, font="Noto Mono",
+                           #font_size=12, border=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], border_width=5, opacity=0.90, wrap=True)
+
+        self.popup = Popup(qtile, background=self.win_background, foreground=self.win_foreground,
+                           x=self.win_pos[0], y=self.win_pos[1],
+                           width=self.win_size[0], height=self.win_size[1],
+                           font=self.win_font, font_size=self.win_fontsize, fontshadow=self.win_fontshadow,
+                           border=self.win_bordercolor, border_width=self.win_borderwidth,
+                           opacity=self.win_opacity, wrap=True)
 
         self.popup.layout.markup = False  # TODO PR to add this to popup options
         self.popup.layout.width = self.popup.width  # actually enforce line wrap. see PR above
@@ -64,6 +84,7 @@ class REPL(base._TextBox):
         self.popup.win.process_pointer_enter = self.enter
 
     def key_press(self, keycode):
+        """Handle key presses."""
         try:
             keychr = chr(keycode)
             log_test(f"key {keycode}={keychr} pressed")  # TODO convert keycodes to text
@@ -83,6 +104,8 @@ class REPL(base._TextBox):
                 if self.new_text[-1] == "\n":
                     self.indentation_level -= 1
                 self.new_text = self.new_text[:-1]
+            elif keycode == 65289:  # tab. NOTE probably never going to have tab completion
+                self.new_text += "\t"
             # history
             elif keycode in [65362, 65364]:  # up/down arrow keys. TODO double check with another non 60% keyboard
                 if self.history:
@@ -127,17 +150,18 @@ class REPL(base._TextBox):
             log_test(f"key press error: {e}")
 
     def leave(self, *args):  # close window when mouse leaves
+        """Handle hiding repl window."""
         try:
             log_test("pointer leave")
             self.popup.hide()
             #self.popup.kill()
-            self.cmd_update("REPL Closed")
+            self.cmd_update("_" + self.og_bartext)#"REPL Closed")
             self.win_opened = False
         except Exception as e:
             log_test(f"pointer leave error: {e}")
 
-    # focus window
     def b_press(self, x, y, button):  # two functions cause mouse click doesn't work with *args
+        """ Handle mouse button presses."""
         try:
             if button == 1:
                 self.popup.win.focus(warp=False)
@@ -151,7 +175,7 @@ class REPL(base._TextBox):
                 self.popup.draw_text(x=2, y=self.draw_y)
                 self.popup.draw()
                 self.popup.text = lines_to_text(self.old_text)
-            elif button == 8:  # move the window around (crudely)
+            elif button == self.win_mousebutton_move:  # move the window around (crudely)
                 new_pos = (self.popup.x+x-self.popup.width//2, self.popup.y+y-self.popup.height//2)
                 self.popup.win.place(new_pos[0], new_pos[1], self.popup.width, self.popup.height, self.popup.border_width, self.popup.border)
                 self.popup.x, self.popup.y = new_pos  # .place() doesn't change these
@@ -160,6 +184,7 @@ class REPL(base._TextBox):
             log_test(f"button click error: {e}")
 
     def enter(self, *args):
+        """Handle mouse enter window to focus."""
         try:
             self.popup.win.focus(warp=False)
             log_test("pointer enter")
@@ -167,10 +192,10 @@ class REPL(base._TextBox):
             log_test(f"pointer enter error: {e}")
 
     def open_win(self):
-        """Open python repl in internal window"""
+        """Open python repl in internal window."""
         if not self.win_opened:
             self.win_opened = True
-            self.cmd_update("REPL Opened")
+            self.cmd_update(self.og_bartext)#"REPL Opened")
             #simple_repl()
             self.popup.place()
             self.popup.unhide()
@@ -183,11 +208,11 @@ class REPL(base._TextBox):
             self.leave()"""
 
     def cmd_update(self, text):
-        """Update the text in a TextBox widget"""
+        """Update the text in a TextBox widget."""
         self.update(text)
 
     def cmd_get(self):
-        """Retrieve the text in a TextBox widget"""
+        """Retrieve the text in a TextBox widget."""
         return self.text 
 
 
