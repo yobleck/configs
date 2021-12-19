@@ -36,6 +36,7 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
 import internal_modifications as int_mod
+import py_repl
 
 
 ###Helper functions###
@@ -67,12 +68,8 @@ def cycle_wallpaper(qtile):  # cycle between main wallpaper and black
         qtile.current_screen.wallpaper = "/home/yobleck/Pictures/black.png"
     elif qtile.current_screen.wallpaper == "/home/yobleck/Pictures/black.png":
         qtile.current_screen.wallpaper = "/home/yobleck/Pictures/382337_4k_dn.png"
-    
+
     qtile.paint_screen(qtile.current_screen, qtile.current_screen.wallpaper, qtile.current_screen.wallpaper_mode)
-
-
-simple_start_menu = int_mod.simple_start_menu  # popup window for reboot/shutdown
-simple_repl = int_mod.simple_repl
 
 
 ###HOOKS###
@@ -112,6 +109,7 @@ def initial_startup_stuff():
     #above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
     qtile.cmd_spawn("kill -2 kwalletd5")
     # subprocess.run(["sleep", "2"]) #Needed?
+    #TODO plasma-dolphin.service?
 
     # qtile.cmd_spawn("kill -2 gwe");
 
@@ -431,14 +429,20 @@ screens = [
         top=bar.Bar(
             [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
-                             mouse_callbacks={"Button1": simple_start_menu}),
+                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),
                 widget.Spacer(),
-                widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg",
-                             mouse_callbacks={"Button1": simple_repl}),
+                widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg"),
+                py_repl.REPL(foreground="#00aa00", font="Noto Mono", win_foreground="#00aa00", win_pos=(100,100), win_size=(800,800),
+                             win_font="Noto Mono", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
+                             win_opacity=0.9
+                             ),
+                #widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg",
+                             #mouse_callbacks={"Button1": simple_repl}),
                 # TODO kde system settings icon
                 widget.TextBox(" ", foreground="#00aa00"),
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/utilities-system-monitor.svg",
-                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}),
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}
+                             ),
                 widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {freq_current}GHz {load_percent}%", update_interval=1),
                 # TODO thermal sensor switching to psutil in next update
                 widget.CPUGraph(frequency=1, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
