@@ -166,7 +166,7 @@ def simple_start_menu():
 
 ####
 
-def simple_repl():
+def simple_repl():  # old config hack version. see updated widget version
     try:
         popup = Popup(qtile, background="#000000", foreground="#00aa00", x=1280, y=720, width=500, height=500, font="Noto Mono", font_size=12,
                       border=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], border_width=5, opacity=0.90, wrap=True)
@@ -217,6 +217,8 @@ def simple_repl():
                     if new_text[-1] == "\n":
                         indentation_level -= 1
                     new_text = new_text[:-1]
+                elif keycode == 65289:  # tab. NOTE probably never going to have tab completion
+                    new_text += "\t"
                 # history
                 elif keycode in [65362, 65364]:  # up/down arrow keys. TODO double check with another non 60% keyboard
                     if history:
