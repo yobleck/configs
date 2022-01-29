@@ -18,6 +18,22 @@ while True:
         print("end")
         break
 
+# getch blocking without tty or select modules
+def getch_block() -> str:
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    new = old_settings
+    new[3] &= ~(termios.ICANON | termios.ECHO)
+    new[6][termios.VMIN] = 1
+    new[6][termios.VTIME] = 0
+    termios.tcsetattr(fd, termios.TCSADRAIN, new)
+    try:
+        #tty.setcbreak(fd)
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
 """
 #Non blocking a.k.a. busy waiting. useful for when stuff needs to happen without user input
 def getch_noblock():
