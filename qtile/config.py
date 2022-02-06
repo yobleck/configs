@@ -36,7 +36,9 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
 import internal_modifications as int_mod
+from floating_window_snapping import move_snap_window
 import py_repl
+import tts
 
 
 ###Helper functions###
@@ -61,6 +63,16 @@ def parse(text):  # Function for editing displayed wm_name
                    "Media Player Classic Qute Theater - "]:
         text = text.replace(string, "")
     return text
+
+
+"""import subprocess
+def z1(qtile):
+    log_test("here")
+    try:
+        subprocess.run(["sh", "/home/yobleck/.config/qtile/z1.sh"])
+        log_test("here2")
+    except Exception as e:
+        log_test(e)"""
 
 
 def cycle_wallpaper(qtile):  # cycle between main wallpaper and black
@@ -102,7 +114,8 @@ def initial_startup_stuff():
     # qtile.cmd_spawn("xbindkeys")
     # TODO: sudo pacman -Sy as startup service
     # TODO: disable desktop_scroll service
-    # qtile.cmd_spawn("gwe --hide-window") WARNING: linux5.10 and nvidia 465 broken cant overclock
+    # qtile.cmd_spawn("gwe --hide-window")
+    #qtile.cmd_spawn("python /home/yobleck/.moc/mpris2_bridge/moc-mpris/moc_mpris.py")  # allows moc to be controlled by other media keys/kdeconnect
 
     # TODO: need /usr/lib/klauncher --fd=8 kdeinit5 kinit kactivitymanagerd kioclient exec .exe and kded5 so kde apps start quickly?
     qtile.cmd_spawn("kill -2 kglobalaccel5")
@@ -173,11 +186,56 @@ def kde_widgets(window):
         if(window.window.get_name() == "Audio Volume"):
             #time.sleep(0.5);
             qtile.cmd_spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
-    
-    # Adds border snapping to floating windows
-    int_mod.border_snap(window)
 
-#TODO:mouse callback on bar widgets?
+    if window.group.layout.name == "stack":
+        # filter out floating windows including FAHStats 
+        w = [w for w in window.group.windows if (False, False) == (w.floating, w.minimized)]
+        #log_test(w)
+        if len(w) < 2 and window.floating == False:
+            window.group.layout.cmd_client_to_stack(1)
+    
+    #int_mod.border_snap(window) TODO remove this
+
+
+"""@hook.subscribe.group_window_add
+def test(group, window):
+    log_test(group)
+    log_test(window)
+    window.group = group
+    try:
+        log_test(window.group.layout.name)
+    except Exception as e:
+        log_test(e)
+    if group.layout.name == "stack":
+        # filter out floating windows including FAHStats 
+        w = [w for w in window.group.windows if (False, False) == (w.floating, w.minimized)]
+        log_test(w)
+        #log_test(w)
+        if len(w) < 1:
+            try:
+                #log_test(dir(window.group.layout))
+                #window.focus(warp=False)
+                #group.layout.focus(window)
+                #window.group.layout.cmd_client_to_stack(1)
+                #group.layout.cmd_client_to_stack(1)
+                
+                group.layout.current_stack.remove(window)
+                group.layout.stacks[1].add(window)
+                group.layout.stacks[1].focus(window)
+                group.layout_all()
+                log_test("should work")
+            except Exception as e:
+                log_test(e)"""
+
+"""@hook.subscribe.screen_change
+def sc(e):
+    log_test("screen_change")
+    log_test(e)
+@hook.subscribe.screens_reconfigured
+def sr():
+    log_test("screens_reconfigured")"""
+
+
 """win_list = []
 def stick_win(qtile):
     global win_list
@@ -199,8 +257,8 @@ mod = "mod4"  # TODO change to meta
 terminal = guess_terminal()
 
 keys = [
-    # Key([mod], "o", lazy.function(stick_win), desc="popup"),
-    # Key([mod, "shift"], "o", lazy.function(unstick_win), desc="popup"),
+    Key([mod], "o", lazy.function(tts.get_text), desc="test function"),
+    # Key([mod, "shift"], "o", lazy.function(unstick_win), desc="test function"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
         desc="Move focus down in stack pane"),
@@ -241,7 +299,8 @@ keys = [
     Key([mod, "shift"], "Tab", lazy.prev_layout(), desc="Toggle between layouts backwards"),
     Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
 
-    Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),  # TODO replace with cmd_reload_config when available
+    Key([mod, "control"], "r", lazy.reload_config(), desc="Reload qtile config"),
+    Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),
     Key([mod, "control", "shift"], "q", lazy.shutdown(), desc="Shutdown qtile"),
     Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
@@ -252,6 +311,7 @@ keys = [
     Key([mod, "control"], "b", lazy.function(toggle_bar, "bottom"), desc="toggle bar visibility"),
     Key([mod, "control"], "t", lazy.function(toggle_bar, "top"), desc="toggle bar visibility"),
     Key([mod, "control"], "c", lazy.function(cycle_wallpaper), desc="cycle main and black wallpaper"),
+    #Key([mod, "control"], "z", lazy.function(z1), desc="prune url"),
 
     # Volume control
     Key([], "XF86AudioRaiseVolume",
@@ -260,10 +320,12 @@ keys = [
         lazy.spawn("pulseaudio-ctl down"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
     Key([], "XF86AudioMute",
         lazy.spawn("pulseaudio-ctl mute")),
-    #Key([], "XF86AudioNext",
-        #lazy.spawn("pulseaudio-ctl mute")),
-    #Key([], "XF86AudioPrev",
-        #lazy.spawn("pulseaudio-ctl mute")),#play next and prev
+    Key([], "XF86AudioPlay",
+        lazy.spawn("playerctl play-pause")),
+    Key([], "XF86AudioNext",
+        lazy.spawn("playerctl next")),
+    Key([], "XF86AudioPrev",
+        lazy.spawn("playerctl previous")),#play next and prev
 
     # Run various programs
     #KeyChord(["control", "mod1"], "z", [
@@ -294,9 +356,9 @@ groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
 groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py", matches=[Match(wm_class=["dolphin"])]))
 groups.append(Group("F@H", layout="stack", spawn=["konsole", "FAHControl"]))
 #groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
-groups.append(Group("game", matches=[Match(wm_class=["Steam", "MultiMC5", "hl2_linux"])]))  # TODO: add video game match rules
+groups.append(Group("vg", matches=[Match(wm_class=["Steam", "MultiMC5", "hl2_linux"])]))  # TODO: add video game match rules 
 
-g_list = {"web": "a", "2nd": "s", "F@H": "d", "game": "f"}  # "htop": "f",
+g_list = {"web": "a", "2nd": "s", "F@H": "d", "vg": "f"}  # "htop": "f",
 for g in g_list.items():
     keys.extend([
         Key([mod], g[1], lazy.group[g[0]].toscreen(toggle=False),
@@ -368,7 +430,7 @@ screens = [
                 widget.CheckUpdates(custom_command="pamac checkupdates -q; echo -n",  # custom_command_modify = (lambda x: x/2-1),
                                     execute="pamac-manager", update_interval="600", display_format="U:{updates}",
                                     no_update_string=" U ", font="Noto Mono", colour_no_updates="#00aa00", colour_have_updates="#880000",
-                                    ),
+                                    ),  # TODO error_string when added in next update
                 widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
                              ),
@@ -429,12 +491,13 @@ screens = [
         top=bar.Bar(
             [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
-                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),
+                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  for text version
                 widget.Spacer(),
-                widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg"),
-                py_repl.REPL(foreground="#00aa00", font="Noto Mono", win_foreground="#00aa00", win_pos=(100,100), win_size=(800,800),
+                #widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg"),  # TODO 2 images for open and close
+                py_repl.REPL(text="", foreground="#00aa00", font="Noto Mono", fontsize=18,
+                             win_foreground="#00aa00", win_pos=(100,100), win_size=(800,800),
                              win_font="Noto Mono", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
-                             win_opacity=0.9
+                             win_opacity=0.9  # text=" PY REPL"
                              ),
                 #widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg",
                              #mouse_callbacks={"Button1": simple_repl}),
@@ -443,12 +506,12 @@ screens = [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/utilities-system-monitor.svg",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}
                              ),
-                widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {freq_current}GHz {load_percent}%", update_interval=1),
-                # TODO thermal sensor switching to psutil in next update
-                widget.CPUGraph(frequency=1, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
-                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:.0f}{mm}/{MemTotal:.0f}{mm}", update_interval=1),
-                widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=1),
-                widget.NetGraph(frequency=1, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
+                widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
+                widget.ThermalSensor(foreground="#00aa00", font="Noto Mono", tag_sensor="Tctl", threshold=80, update_interval=2),
+                widget.CPUGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
+                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:05.0f}{mm}/{MemTotal:.0f}{mm}", update_interval=2),
+                widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=2),
+                widget.NetGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", font="Noto Mono",
                                      threshold=80, update_interval=2),
             ],
@@ -466,7 +529,7 @@ screens = [
 ###Misc settings###
 # Drag floating layouts.
 mouse = [
-    Drag([mod], "Button1", lazy.window.set_position_floating(border_snapping=True, snap_dist=20),
+    Drag([mod], "Button1", move_snap_window(snap_dist=20),# lazy.window.set_position_floating(border_snapping=True, snap_dist=20),
          start=lazy.window.get_position()),
     Drag([mod], "Button3", lazy.window.set_size_floating(),
          start=lazy.window.get_size()),
@@ -511,7 +574,7 @@ floating_layout = layout.Floating(float_rules=[
     no_reposition_rules=[  # TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
         Match(wm_class="FAHStats"),
         #Match(wm_class="plasmawindowed"), #only sort of works
-])
+], border_width=1)
 
 
 auto_fullscreen = True
