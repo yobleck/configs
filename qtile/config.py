@@ -38,7 +38,7 @@ from libqtile.utils import guess_terminal  # , send_notification #used for popup
 import internal_modifications as int_mod
 from floating_window_snapping import move_snap_window
 import py_repl
-import tts
+import accessibility as ac
 
 
 ###Helper functions###
@@ -69,7 +69,7 @@ def parse(text):  # Function for editing displayed wm_name
 def z1(qtile):
     log_test("here")
     try:
-        subprocess.run(["sh", "/home/yobleck/.config/qtile/z1.sh"])
+        subprocess.run(["sh", "/home/yobleck/.config/qtile/z1.sh"], shell=True)
         log_test("here2")
     except Exception as e:
         log_test(e)"""
@@ -257,8 +257,8 @@ mod = "mod4"  # TODO change to meta
 terminal = guess_terminal()
 
 keys = [
-    Key([mod], "o", lazy.function(tts.get_text), desc="test function"),
-    # Key([mod, "shift"], "o", lazy.function(unstick_win), desc="test function"),
+    Key([mod], "o", lazy.function(ac.get_bar_text), desc="test function"),
+    # Key([mod, "shift"], "o", lazy.function(unstick_win), desc="test function 2"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
         desc="Move focus down in stack pane"),
@@ -435,7 +435,6 @@ screens = [
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
                              ),
                 #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
-                #widget.QuickExit(),
                 #widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(0)}, font="Noto Mono"),
             ],
             24,
@@ -491,7 +490,7 @@ screens = [
         top=bar.Bar(
             [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
-                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  for text version
+                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  for text version noto fonts only
                 widget.Spacer(),
                 #widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg"),  # TODO 2 images for open and close
                 py_repl.REPL(text="", foreground="#00aa00", font="Noto Mono", fontsize=18,
@@ -509,7 +508,7 @@ screens = [
                 widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
                 widget.ThermalSensor(foreground="#00aa00", font="Noto Mono", tag_sensor="Tctl", threshold=80, update_interval=2),
                 widget.CPUGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
-                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:05.0f}{mm}/{MemTotal:.0f}{mm}", update_interval=2),
+                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:05.0f}{mm}B/{MemTotal:.0f}{mm}B", update_interval=2),
                 widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=2),
                 widget.NetGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", font="Noto Mono",
