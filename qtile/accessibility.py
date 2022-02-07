@@ -16,7 +16,7 @@ def log_test(i):
     f.close()
 
 
-"""Curently tested options are:
+"""Currently tested options are:
 name, install method, help/man
 gtts, pip install gtts, https://gtts.readthedocs.io/en/latest/
     gtts requires an audio player like mpv, vlc, mocp, or aplay
@@ -25,9 +25,9 @@ gtts, pip install gtts, https://gtts.readthedocs.io/en/latest/
 espeak, pamac install espeak / pacman -S espeak, espeak --help
     espeak requires fewer dependencies, no internet connection
     and is more configurable
-    but it sound worse
+    but it sounds worse
 """
-ENGINE = "espeak"
+ENGINE = "gtts"
 
 if ENGINE == "gtts":
     try:
@@ -36,9 +36,9 @@ if ENGINE == "gtts":
         log_test("could not import gtts. make sure it is installed \
             with \'pip install gtts\'")
         logger.warning(f"Could not import gtts. make sure it is installed")
+# TODO keybinding, hooks and lazy readers
 
-
-def get_text(qtile):
+def get_bar_text(qtile):
     """Primary function to be run from config with
     import tts
     lazy.function(tts.get_text)
@@ -58,6 +58,7 @@ def get_text(qtile):
         log_test(text)
         """Sending the text to the TTS engine may take awhile so mp
         is to ensure that qtile doesn't freeze during that time
+        NOTE CURRENTLY NOT WORKING?
         """
         p = Process(target=_play_audio, args=(text,), daemon=True)
         p.start()
@@ -83,7 +84,7 @@ def _parse_widget(widget):
         case "CurrentLayout":
             return "The current layout is " + widget.text + ". "
         case "CheckUpdates":
-            return widget.text + " updates available. "
+            return widget.text + " Updates available. "
         case "Notify":
             if widget.text:
                 return "Notification: " + widget.text + ". "
@@ -91,12 +92,33 @@ def _parse_widget(widget):
                 return "No new notifications. "
         case "CPU":
             return widget.text + ". "
+        case "ThermalSensor":
+            return "CPU temp is " + widget.text + ". "
         case "Memory":
             return widget.text + ". "
+        case "WindowName":
+            return "The current window is " + widget.text + ". "
+        case "WindowTabs":
+            temp = "This screen's windows are: "
+            if widget.text:
+                for i, w in enumerate(widget.text.split(widget.separator)):
+                    temp += str(i) + ". " + w + ". "
+            else:
+                temp += "no windows. "
+            return temp
+        case "TaskList":
+            temp = "This screen's windows are: "
+            wins = widget.windows
+            if wins:
+                for i, w in enumerate(wins):
+                    temp += str(i) + ". " + str(w.name) + ". "  # widget.get_taskname(w)?
+            else:
+                temp += "no windows. "
+            return temp
         #case "GroupBox":
             #pass  # how to tell what current group is?
-        #case "TaskList":
-            #pass
+            # use .groups() to get list of groups
+            # and compare to widget.bar.screen.group.name for current group?
         case _:
             return widget.__class__.__name__ + " widget. "
 
@@ -117,4 +139,4 @@ def _play_audio(text):
 
     elif ENGINE == "espeak":
         # NOTE see espeak --help for more options
-        subprocess.Popen(["espeak", "-s", "150", "-v", "en-german-5", text])
+        subprocess.Popen(["espeak", "-s", "180", "-v", "en-german-5", text])
