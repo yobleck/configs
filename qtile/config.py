@@ -84,6 +84,13 @@ def cycle_wallpaper(qtile):  # cycle between main wallpaper and black
     qtile.paint_screen(qtile.current_screen, qtile.current_screen.wallpaper, qtile.current_screen.wallpaper_mode)
 
 
+def tasklist_kill():  # kill current window when mouse middle clicks on tasklist widget
+    for w in qtile.current_screen.bottom.widgets:
+        if w.name == "tasklist":
+            w.clicked.kill()
+            break
+
+
 ###HOOKS###
 @hook.subscribe.startup_once
 def initial_startup_stuff():
@@ -110,7 +117,7 @@ def initial_startup_stuff():
     qtile.cmd_spawn("/usr/lib/kdeconnectd")  # kdeconnect daemon
     qtile.cmd_spawn("kdeconnect-indicator")  # kdeconnect taskbar widget icon
 
-    # qtile.cmd_spawn("mocp -S")
+    qtile.cmd_spawn("mocp -S")
     # qtile.cmd_spawn("xbindkeys")
     # TODO: sudo pacman -Sy as startup service
     # TODO: disable desktop_scroll service
@@ -118,7 +125,7 @@ def initial_startup_stuff():
     #qtile.cmd_spawn("python /home/yobleck/.moc/mpris2_bridge/moc-mpris/moc_mpris.py")  # allows moc to be controlled by other media keys/kdeconnect
 
     # TODO: need /usr/lib/klauncher --fd=8 kdeinit5 kinit kactivitymanagerd kioclient exec .exe and kded5 so kde apps start quickly?
-    qtile.cmd_spawn("kill -2 kglobalaccel5")
+    #qtile.cmd_spawn("kill -2 kglobalaccel5")
     #above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
     qtile.cmd_spawn("kill -2 kwalletd5")
     # subprocess.run(["sleep", "2"]) #Needed?
@@ -193,8 +200,6 @@ def kde_widgets(window):
         #log_test(w)
         if len(w) < 2 and window.floating == False:
             window.group.layout.cmd_client_to_stack(1)
-    
-    #int_mod.border_snap(window) TODO remove this
 
 
 """@hook.subscribe.group_window_add
@@ -234,31 +239,16 @@ def sc(e):
 @hook.subscribe.screens_reconfigured
 def sr():
     log_test("screens_reconfigured")"""
-
-
-"""win_list = []
-def stick_win(qtile):
-    global win_list
-    win_list.append(qtile.current_window)
-    log_test(win_list)
-def unstick_win(qtile):
-    global win_list
-    if qtile.current_window in win_list:
-        win_list.remove(qtile.current_window)
-    log_test(win_list)
-@hook.subscribe.setgroup #setgroup?
-def move_win():
-    for w in win_list:
-        w.togroup(qtile.current_group.name)"""
     
 
 ###KEY BINDS###
 mod = "mod4"  # TODO change to meta
 terminal = guess_terminal()
-
+def tee(s):
+    log_test(s)
 keys = [
-    Key([mod], "o", lazy.function(ac.get_bar_text), desc="test function"),
-    # Key([mod, "shift"], "o", lazy.function(unstick_win), desc="test function 2"),
+    #Key([mod], "o", ac.lazy_next_layout(), desc="test function"),  #lazy.function(ac.get_bar_text) #ac.lazy_function(tee, "func_test")
+    #Key([mod, "shift"], "o", lazy.function(ac.play_audio, "mod o"), desc="test function 2"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
         desc="Move focus down in stack pane"),
@@ -266,13 +256,13 @@ keys = [
         desc="Move focus up in stack pane"),
 
     # move windows around in the columns layout
-    Key([mod, "shift"], "k", lazy.layout.shuffle_down(),
+    Key([mod, "shift"], "Down", lazy.layout.shuffle_down(),
         desc="Move window down in current stack "),
-    Key([mod, "shift"], "i", lazy.layout.shuffle_up(),
+    Key([mod, "shift"], "Up", lazy.layout.shuffle_up(),
         desc="Move window up in current stack "),
-    Key([mod, "shift"], "j", lazy.layout.shuffle_left(),
+    Key([mod, "shift"], "Left", lazy.layout.shuffle_left(),
         desc="Move window left in current stack "),
-    Key([mod, "shift"], "l", lazy.layout.shuffle_right(),
+    Key([mod, "shift"], "Right", lazy.layout.shuffle_right(),
         desc="Move window right in current stack "),
 
     # Switch window focus to other pane(s) of stack layout
@@ -297,12 +287,12 @@ keys = [
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
     Key([mod, "shift"], "Tab", lazy.prev_layout(), desc="Toggle between layouts backwards"),
-    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),  # repkace with alt f4?
 
     Key([mod, "control"], "r", lazy.reload_config(), desc="Reload qtile config"),
     Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),
     Key([mod, "control", "shift"], "q", lazy.shutdown(), desc="Shutdown qtile"),
-    Key(["mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
+    Key([mod, "mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
     Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
     Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"),
@@ -313,7 +303,7 @@ keys = [
     Key([mod, "control"], "c", lazy.function(cycle_wallpaper), desc="cycle main and black wallpaper"),
     #Key([mod, "control"], "z", lazy.function(z1), desc="prune url"),
 
-    # Volume control
+    # Media control
     Key([], "XF86AudioRaiseVolume",
         lazy.spawn("pulseaudio-ctl up"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
     Key([], "XF86AudioLowerVolume",
@@ -356,7 +346,7 @@ groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
 groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py", matches=[Match(wm_class=["dolphin"])]))
 groups.append(Group("F@H", layout="stack", spawn=["konsole", "FAHControl"]))
 #groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
-groups.append(Group("vg", matches=[Match(wm_class=["Steam", "MultiMC5", "hl2_linux"])]))  # TODO: add video game match rules 
+groups.append(Group("vg", matches=[Match(wm_class=["Steam", "MultiMC", "hl2_linux"])]))  # TODO: add video game match rules 
 
 g_list = {"web": "a", "2nd": "s", "F@H": "d", "vg": "f"}  # "htop": "f",
 for g in g_list.items():
@@ -397,8 +387,6 @@ widget_defaults = dict(
 extension_defaults = widget_defaults.copy()
 
 
-
-
 screens = [
     Screen(  # 1920x1080_144
         bottom=bar.Bar(
@@ -417,7 +405,7 @@ screens = [
                             ),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
-                                mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}
+                                mouse_callbacks={"Button2": tasklist_kill}  #lambda: qtile.current_window.kill()
                                 ),  # TODO: test padding and margin with east asian chars
                 #widget.WindowName(parse_text=parse),
                 #widget.WindowTabs(parse_text=parse),
@@ -463,7 +451,7 @@ screens = [
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
-                                mouse_callbacks={"Button2": lambda: qtile.current_window.kill()}
+                                mouse_callbacks={"Button2": tasklist_kill}  #lambda: qtile.current_window.kill()
                                 ),  # TODO: get tasklist win under mouse not of focused
                 widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono",
                            mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s"),
@@ -503,12 +491,12 @@ screens = [
                 # TODO kde system settings icon
                 widget.TextBox(" ", foreground="#00aa00"),
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/utilities-system-monitor.svg",
-                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("ksysguard")}
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("konsole -e htop")}
                              ),
                 widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
                 widget.ThermalSensor(foreground="#00aa00", font="Noto Mono", tag_sensor="Tctl", threshold=80, update_interval=2),
                 widget.CPUGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
-                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:05.0f}{mm}B/{MemTotal:.0f}{mm}B", update_interval=2),
+                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:05.0f}{mm}B", update_interval=2),
                 widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=2),
                 widget.NetGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", font="Noto Mono",
@@ -517,7 +505,7 @@ screens = [
             24,
             background=["#00330088", "#00000055", "#00000022", "#00000000"],
         ),
-        wallpaper="/home/yobleck/Pictures/382337_4k_dn.png",
+        wallpaper="/home/yobleck/Pictures/black.png",
         wallpaper_mode="fill",
         #width=2560,
         #height=1440,
@@ -562,6 +550,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="FAHStats"),  # folding @ home stats widget
     Match(wm_class="polkit-kde-authentication-agent-1"),  # WM_CLASS(STRING) = "polkit-kde-authentication-agent-1", ditto
     Match(wm_class="krunner"),
+    Match(wm_class="kcalc"),
     Match(wm_class="plasmawindowed"),
     Match(wm_class="Panda3D"),
     Match(wm_class="Xephyr"),
