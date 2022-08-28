@@ -60,7 +60,7 @@ def toggle_bar(qtile, *args):  # Helper function for bar visibility
 
 def parse(text):  # Function for editing displayed wm_name
     for string in [" - YouTube", " \u2014 Mozilla Firefox", " \u2014 Konsole", "  \u2014 Kate", " \u2014 Dolphin", " - Chromium",
-                   "Media Player Classic Qute Theater - "]:
+                   "Media Player Classic Qute Theater - ", " (UNREGISTERED)"]:
         text = text.replace(string, "")
     return text
 
@@ -167,14 +167,14 @@ def startup_complete_stuff():
 
 @hook.subscribe.shutdown
 def shutdown_stuff():
-    #kill or restart sddm. not needed with ly
+    qtile.cmd_spawn("pkill mocp")
     #kill xbindkeys and xautolock
     pass
 
 
 @hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
 def kde_widgets(window):
-    if(window.window.get_wm_class()[0] == "plasmawindowed"):
+    if window.window.get_wm_class()[0] == "plasmawindowed":
         #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
         #time.sleep(0.5);
         if(window.window.get_name() == "Calendar"):
@@ -193,6 +193,14 @@ def kde_widgets(window):
         if(window.window.get_name() == "Audio Volume"):
             #time.sleep(0.5);
             qtile.cmd_spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
+
+    if window.window.get_wm_class()[0] == "subl":
+        # log_test("sublime detected")
+        # log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
+        # Automatically hide sublime buy license popup
+        if window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
+            # log_test("killed sublime popup")
+            window.kill()
 
     if window.group.layout.name == "stack":
         # filter out floating windows including FAHStats 
@@ -322,11 +330,12 @@ keys = [
         Key(["control", "mod1"], "e", lazy.spawn("dolphin"), desc="launch dolphin file manager"),  # --style gtk2 export QT_QPA_PLATFORMTHEME=\"qt5ct\"
         Key(["control", "mod1"], "r", lazy.spawn("konsole"), desc="launch konsole"),
         Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
+        Key(["control", "mod1"], "h", lazy.spawn("konsole -e htop"), desc="launch htop"),
         Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch firefox"),
         Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
         Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
         Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
-        Key(["control", "mod1"], "Escape", lazy.spawn("ksysguard"), desc="launch task manager"),
+        #Key(["control", "mod1"], "Escape", lazy.spawn("ksysguard"), desc="launch task manager"),
         Key(["control", "mod1"], "p", lazy.spawn("spectacle"), desc="launch scpectacle"),
         Key([mod], "Print", lazy.spawn("spectacle"), desc="launch scpectacle"),
         # mod + . for emoji selector
@@ -337,6 +346,18 @@ keys = [
     #Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker i3lock"), desc="lock screen with i3lock"),
     Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker /home/yobleck/.config/qtile/locker.sh"), desc="lock screen with i3lock"),
     # work around to turn screen back on after locking: lazy.spawn("xset force reset"),
+
+    # Move mouse with keyboard
+    Key([mod, "mod1"], "Left", lazy.spawn("xdotool mousemove_relative -- -10 0"), desc="Move mouse left"),
+    Key([mod, "control", "mod1"], "Left", lazy.spawn("xdotool mousemove_relative -- -100 0"), desc="Move mouse left a lot"),
+    Key([mod, "mod1"], "Right", lazy.spawn("xdotool mousemove_relative 10 0"), desc="Move mouse right"),
+    Key([mod, "control", "mod1"], "Right", lazy.spawn("xdotool mousemove_relative 100 0"), desc="Move mouse right a lot"),
+    Key([mod, "mod1"], "Up", lazy.spawn("xdotool mousemove_relative -- 0 -10"), desc="Move mouse up"),
+    Key([mod, "control", "mod1"], "Up", lazy.spawn("xdotool mousemove_relative -- 0 -100"), desc="Move mouse up a lot"),
+    Key([mod, "mod1"], "Down", lazy.spawn("xdotool mousemove_relative 0 10"), desc="Move mouse down"),
+    Key([mod, "control", "mod1"], "Down", lazy.spawn("xdotool mousemove_relative 0 100"), desc="Move mouse down a lot"),
+    Key([mod, "control", "mod1"], "Return", lazy.spawn("xdotool click 1"), desc="Mouse left click"),
+    Key([mod, "control", "mod1", "shift"], "Return", lazy.spawn("xdotool click 3"), desc="Mouse right click"),
 ]
 
 
@@ -405,7 +426,7 @@ screens = [
                             ),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill}  #lambda: qtile.current_window.kill()
+                                mouse_callbacks={"Button2": tasklist_kill}
                                 ),  # TODO: test padding and margin with east asian chars
                 #widget.WindowName(parse_text=parse),
                 #widget.WindowTabs(parse_text=parse),
@@ -451,8 +472,8 @@ screens = [
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill}  #lambda: qtile.current_window.kill()
-                                ),  # TODO: get tasklist win under mouse not of focused
+                                mouse_callbacks={"Button2": tasklist_kill}
+                                ),
                 widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono",
                            mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s"),
                                             "Button4": lambda: qtile.cmd_spawn("mocp -r"),
@@ -490,7 +511,7 @@ screens = [
                              #mouse_callbacks={"Button1": simple_repl}),
                 # TODO kde system settings icon
                 widget.TextBox(" ", foreground="#00aa00"),
-                widget.Image(filename="/home/yobleck/.config/qtile/icons/utilities-system-monitor.svg",
+                widget.Image(filename="/home/yobleck/.config/qtile/icons/htop.svg",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("konsole -e htop")}
                              ),
                 widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
@@ -525,7 +546,6 @@ mouse = [
 
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
-main = None  # WARNING: this is deprecated and will be removed soon
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
@@ -561,7 +581,7 @@ floating_layout = layout.Floating(float_rules=[
 ],
     no_reposition_rules=[  # TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
         Match(wm_class="FAHStats"),
-        #Match(wm_class="plasmawindowed"), #only sort of works
+        # Match(wm_class="plasmawindowed"), #only sort of works
 ], border_width=1)
 
 
@@ -571,12 +591,5 @@ focus_on_window_activation = "smart"
 auto_minimize = True  # some games auto min when focus lost
 
 
-# XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
-# string besides java UI toolkits; you can see several discussions on the
-# mailing lists, GitHub issues, and other WM documentation that suggest setting
-# this string if your java app doesn't work correctly. We may as well just lie
-# and say that we're a working one by default.
-#
-# We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
-# java that happens to be on java's whitelist.
+# Faked because java bs
 wmname = "LG3D"
