@@ -18,6 +18,10 @@ running shoes
 make radio station where I DJ my own music. (blog/diary?)
 
 scp krunner plugin type scp then number and open that page in default browser
+regex as an scp
+an scp where a person has new eyes every time they blink
+    winking de-synchronizes for a while
+    lase eyes, x-ray eyes, black hole eyes, hell eyes, foresight eyes, maternity eyes, etc.
 
 update bios you fool!
 
@@ -29,12 +33,15 @@ add tags to danbooru scrape script
 
 surf maps
     WIP
-        mom, guitar, forbidden_ways, lux(missing info_player_start), kitsune2, overgrowth2, mesa_aether, heaven_njv, me, garden, cyberwave, tundra
-    
+        mom, guitar, forbidden_ways, lux(missing info_player_start), kitsune2, overgrowth2 s2, mesa_aether, heaven_njv, me, garden, 
+        cyberwave, tundra, sunnyhappylove, cozy, zor, tendies, solace, minuet_ksf
     Cleared
-        beginner, rookie, utopia, school, mesa_fixed, kitsune
+        beginner, rookie, utopia, school, mesa_fixed, kitsune, lovetunnel, aircontrol, calzone
+retexture old surf maps
+fix overgrowth teleport bullshit
+bind jump to mouse2 ?
 
-
+.vmf parser
 
 star wars quote paraphrased to talk about twitter/4chan:
     I felt a great disturbance in the 
@@ -58,7 +65,6 @@ Python midi
 
 how long does it take wolfie to woof in FLOB
 
-
 procedurally generated rooms (rougue like)
     25% chance that side of square will generate another room (igonre if room already exists
     draw as 10x10 pixel to demonstrate
@@ -66,18 +72,18 @@ procedurally generated rooms (rougue like)
 project verticality
     cp_sunshine
 
+port portal 2 test shaft 9 to tf2 rj map
+
 python password handling: import getpass, hashlib, os;
     salt = os.urandom(16).hex().encode();
     hashed_password = hashlib.pbkdf2_hmac("sha512",getpass.getpass().encode(),salt,100000).hex();
     # write salt and hash to file
 
-
-pypy makes sudoku solver 4x faster. still too lsow. try breadth first with realtime visual display
+pypy makes sudoku solver 4x faster. still too slow. try breadth first with realtime visual display
 
 export CACA_GEOMETRY=widthxheight   (96x54) for 1280x720 vids
 export CACA_DRIVER=ncurses or (whats the default?)
 mplayer -vo caca -framedrop "filename.ext"     -framedrop if necessary
-
 
 short story idea:
 war crime committed on dark side of moon. enemy soldier pows helmets removed
@@ -86,10 +92,8 @@ news report interlude
 military investigation document
 no countries mentioned, names of those involved in crime redacted
 
-
 everyone's an NPC:
 short video essays about playing multiplayer video games alone
-
 
 clock.qml 
 /usr/share/sddm/themes/breath2/
@@ -100,3 +104,101 @@ You'll soon find that the Linux "community" is a loosely arranged toxic set of c
 This is where the internet is leading us in terms of manufacturing "safe spaces" that become deeply opinionated hive-mind echo-chambers, purging "wrong-think" and viciously safeguarding their own particular set of delusions.
 The really sad thing is that when you meet these people in real life, they are totally spineless, emotionally crippled and cave in under any kind of pressure.
 Do what you want and don't look for validation. In the end, you are right because it is your machine and you can run it how you see fit. You are master of your own destiny and captain of your own ship. Good luck.
+
+ly tui dm
+    color guide
+    ascii art backgrounds
+    nyan cat animation
+
+write letter to local congressperson about banning safety subscription models
+    like the motorcycle airbag vest
+    
+kiwix update arch wiki
+
+foldingcoin:
+built angry hollow bone work baby caress exactly attempt worth truck sick
+
+sidescrolling game where knight rescues princess but princess is like fuck that shit ima break out
+so you can play as the knight going right through the early levels and as the princess going left
+with puzzles taht each must complete to allow the other to progress.
+final boss in the middle? or maybe you can choose where they meet and the final boss is determined based on meeting point
+
+ai learns to cs surf
+    watch video or demos?
+    
+pydeps cause STDERR to output to konsole after finished running
+
+simple python text editor
+    how to display cursor and keep track of location
+
+you are forgotten, you are neglected, you are loathed.
+
+kpackagetool5 --list --type Plasma/Applet -g
+
+nmap -p 22 google.com
+portping() { python <<<"import socket; socket.setdefaulttimeout(1); socket.socket().connect(('$1', $2))" 2> /dev/null && echo OPEN || echo CLOSED; }
+above is a bash / python oneliner that pings an ip address via a specific socket? https://superuser.com/a/1015387
+
+renderer 3.0
+cuda conversion of 2.0?
+
+megasync-nopdfium
+libzim6 vs libvim?
+
+renamed plasma-kactivitymanager and plasma-kglobalaccel to .bak to disable them
+renamed /usr/bin/plasma-waitforname to disable it
+
+fix nuphy by using mac mode
+https://github.com/qtile/qtile/issues/955#issuecomment-438089334
+Madison
+ — 
+12/01/2021
+Q: Firmware for Air75?
+A: The Beta version of firmware for Windows is coming~ Please check it, it has improved a lot compared with the software. Test it if you have an interest.
+https://www.dropbox.com/.../NuPhy_Air75_firmware_win... 
+About the improvements via the firmware:
+1. When the battery charge is lower than 20%, the Del key will flash continuously for one minute to indicate that the battery is low. After charging is connected, the Del key will flash an orange light to indicate that it is charging until the charging is completed.
+2. The sidelight settings can be kept after the keyboard is turned off.
+3. The sidelights have changed from the original only 4 gears with adjustable brightness to 5 gears
+4. FN+TAB+F can adjust the F area to F1-F12, Fn+F1—F12 are media keys, and the settings before the keyboard is turned off will be kept.
+5. The keyboard will automatically connect with your devices after it restarts or the sleep mode off
+6. After turning off the keyboard backlight and sidelights, the boost capacitor will be turned off to save power.
+Madison
+ — 
+Yesterday at 10:45 PM
+@everyone 
+Q: Is there a tutorial to "how to update the firmware" for air75?
+A: Plug in the keyboard to connect it with your device; Open the firmware update; Unplug the keyboard and plug back in; Wait for the update to complete; Close updater; Turn off the keyboard; Turn on the keyboard. That's all. 
+
+/etc/modprobe.d/hid_apple.conf fixes F key issue for air75
+
+fork https://github.com/progwolff/moc-mpris
+to remove musicbrainzngs album art dependency
+
+bookmark manager
+.desktop files in a folder structure (in a zip maybe?)
+or json "name": [url, tags, other options]
+import/export chrome and firefox
+
+obs + mpv + http streaming
+video chat thingy
+
+manjaro-hello web-installer-url-handler pyside6 python-manjaro-sdk shiboken6 clang llvm qt6-declarative
+
+try festival or espeak text to speech software
+also pokemonsay thing
+
+putin says cyja blyat, rush B do not stop my friends
+cut to Ukrainian awp squad waiting on site B
+
+kde notification plasma_waitforname
+kill it by renaming /usr/bin/plasma_waitforname and commenting out exec in /usr/share/dbus-1/services/org.kde.Notifications.service
+
+
+2.5D? synthwave driving procedurally generated city/highways
+
+I survived the ___ and all i got was this shitty binary number tattoo
+
+kys by pink guy perfect loop
+
+YT api script that jsut goes through all subscripptions and checks for new video and opens in new browser tab
