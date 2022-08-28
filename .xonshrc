@@ -14,7 +14,7 @@ aliases["waifu2x"] = "waifu2x-ncnn-vulkan"
 aliases["kiwix"] = "env XDG_CONFIG_HOME=/usr/share/color-schemes/Breath.colors kiwix-desktop"
 aliases["ds2"] = "sudo -E python /home/yobleck/old_projects/ds2_mouse_fix/mouse.py"
 aliases["yt"] = "python /home/yobleck/yt-py-ncurses/youtube_main.py"
-aliases["twitch"] = "python /home/yobleck/twitch-py-cli/main.py" #cd /home/yobleck/twitch-py-cli; 
+aliases["twitch"] = "python /home/yobleck/twitch-py-cli/main.py" #cd /home/yobleck/twitch-py-cli;
 aliases["songrater"] = "python /home/yobleck/Music/song_rater/song_rater.py"
 aliases["hack_text"] = "python /home/yobleck/old_projects/hack_text.py"
 aliases["startup"]= "sudo echo start; bash /home/yobleck/fah/fah_stats.sh &; sudo -E python /home/yobleck/desktop_scroll/scroll.py &"
@@ -22,9 +22,12 @@ aliases["flash"] = "cd /home/yobleck/flashpoint/Flashpoint_8.1_Infinity/Launcher
 aliases["mount_ht"] = "sshfs ht@10.0.0.33:/home/ht/storage /home/yobleck/ht/storage"
 aliases["unmount_ht"] = "fusermount -u /home/yobleck/ht/storage"
 aliases["lock"] = "i3lock --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\"" #--color 001100cc
-aliases["weather"] = "curl wttr.in/Williston+VT"; #"curl v2.wttr.in/Williston+VT" only supports metric
+aliases["weather"] = "curl wttr.in/Williston+VT" #"curl v2.wttr.in/Williston+VT" only supports metric
 aliases["diff"] = "diff --color"
-#aliases["FAHClient"] = "cd /home/yobleck/fah; FAHClient";
+aliases["black"] = "black --diff --color"
+aliases["git"] = "xonsh ~/Videos/ascii_rick/git_gud.xsh"
+aliases["sublime"] = "subl"
+#aliases["FAHClient"] = "cd /home/yobleck/fah; FAHClient"
 
 #fix ls color issue
 ${"LS_COLORS"}["ow"] = ('BLUE',)
@@ -43,41 +46,41 @@ __xonsh__.commands_cache.threadable_predictors['nnn'] = lambda args: False
 
 #these functions dont clear the screen correctly maybe still use bash watch function
 def cpuclock():
-    import sys, time
+    import sys, time  # have to use python time so ctrl C works
     while(True):
         #this redraws cleaner than clear(cls)   "\033[F"=go to beginning of previous line
         print("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F")
         echo "temperature:"
-        print(int($(cat /sys/class/hwmon/hwmon0/temp1_input))/1000) #change temp1 to temp2 (Tctl to Tdie)
+        print(int($(cat /sys/class/hwmon/hwmon1/temp1_input))/1000) #change temp1 to temp2 (Tctl to Tdie)
         #measure Icore and Isoc with curr1-2    measure Vcore and Vsoc with in0-1     both in milliamps
         echo "clock speeds:"
         cat /proc/cpuinfo | grep '^[c]pu MHz'
         time.sleep(2)
 
 def gpuinfo():
-    import time;
     while True:
-        print("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F"); #add clearline character \33[2K
+        print("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F")  #add clearline character \33[2K
         nvidia-smi --query-gpu=clocks.current.graphics --format=csv
         nvidia-smi --query-gpu=clocks.current.memory --format=csv
         nvidia-smi --query-gpu=memory.used --format=csv
         nvidia-smi --query-gpu=temperature.gpu --format=csv
         nvidia-smi --query-gpu=fan.speed --format=csv
         nvidia-smi --query-gpu=power.draw --format=csv
-        time.sleep(2);
+        sleep 2
 
 def FAHClient_filter():
     if($PWD != "/home/yobleck/fah"):
         cd "/home/yobleck/fah"
         print("wrong folder")
-        $[FAHClient]
-    else:
-        $[FAHClient]
-aliases["fahclient"] = FAHClient_filter;
+        sleep 1
+    $[FAHClient]
+    #else:
+        #$[FAHClient]
+aliases["fahclient"] = FAHClient_filter
 
 def fahthrottle(per):
     [$[cpulimit -p @(x) -l @(per)] for x in [$(pgrep FahCore_21).strip("\n"), $(pgrep FahCore_22).strip("\n")] if(x)]
-    notify-send "GPU WU Done"
+    notify-send -u critical "GPU WU Done"
 
 def fahsleep(timer): #format timer as "1.5h"
     sleep @(timer); FAHClient --send-pause; kill -2 @$(pgrep FAHControl); kill -2 @$(pgrep FAHClient); shutdown -h 1
@@ -91,13 +94,22 @@ def timer():
         minute = int((t2-(hour*3600))/60)
         sec = int(t2-(hour*3600)-(minute*60))
         ms = t2 - int(t2)
-        print(f" {hour:02d}" + ":" + f"{minute:02d}" + ":" + f"{sec:02d}" + str(ms)[1:4] , end="\r")
+        print(f" {hour:02d}:{minute:02d}:{sec:02d}{str(ms)[1:4]}" , end="\r")  # TODO hide cursor
+
+def alarm(amount):
+    sleep @(amount)
+    for _ in range(10):
+        print("\a")
+        sleep 1
 
 #add surf, and clip
 
 #import local python modules
 import sys
 sys.path.insert(0,"")
+
+def test_func():
+    notify-send "test"
 
 
 #sys.path.append("/home/yobleck/old_projects/");
