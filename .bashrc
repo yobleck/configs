@@ -145,7 +145,12 @@ alias cd..="echo \"you meant cd ..\";cd .."
 alias heaven="cd /var/tmp/pamac-build-yobleck/unigine-heaven/src/Unigine_Heaven-4.0; ./heaven"
 alias superposition="cd /var/tmp/pamac-build-yobleck/unigine-superposition/src/Unigine_Superposition-1.1; ./Superposition"
 alias superpostion="echo \"you meant superposition\"; cd /var/tmp/pamac-build-yobleck/unigine-superposition/src/Unigine_Superposition-1.1; ./Superposition"
-
+#alias musicbee="wine \"/home/yobleck/.wine/drive_c/Program Files (x86)/MusicBee3/MusicBee.exe\""
+alias kiwix="env XDG_CONFIG_HOME=/usr/share/color-schemes/Breath.colors kiwix-desktop"
+alias gtav_radio="cd /home/yobleck/gtav_radio; python gtav_radio.py"
+alias mocs="python /home/yobleck/.moc/sort/sorter.py"
+#alias qtile="startx /usr/bin/qtile start"
+alias sublime="subl"
 #monitors cpu clock speed in MHz
 cpuclocktemp(){
     echo "temperature:"
@@ -205,10 +210,12 @@ clip(){
 }
 export -f clip
 
-alias musicbee="wine \"/home/yobleck/.wine/drive_c/Program Files (x86)/MusicBee3/MusicBee.exe\""
-alias kiwix="env XDG_CONFIG_HOME=/usr/share/color-schemes/Breath.colors kiwix-desktop"
-alias gtav_radio="cd /home/yobleck/gtav_radio; python gtav_radio.py"
-alias mocs="python /home/yobleck/.moc/sort/sorter.py"
-alias qtile="startx /usr/bin/qtile start"
-
+git(){
+    if [[ $@ == "gud" ]]; then
+        command sh ~/Videos/ascii_rick/git_gud.sh
+    else
+        command git $@
+        fi
+}
+export -f git
 #sudo -E /home/yobleck/desktop_scroll/scroll.sh
