@@ -35,10 +35,12 @@ from libqtile.config import Click, Drag, Group, Key, Match, Screen  # , KeyChord
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
-import internal_modifications as int_mod
-from floating_window_snapping import move_snap_window
-import py_repl
 import accessibility as ac
+import desktop_icons
+from floating_window_snapping import move_snap_window
+import internal_modifications as int_mod
+import py_repl
+import window_preview
 
 
 ###Helper functions###
@@ -93,7 +95,7 @@ def tasklist_kill():  # kill current window when mouse middle clicks on tasklist
 
 ###HOOKS###
 @hook.subscribe.startup_once
-def initial_startup_stuff():
+def startup_once_stuff():
     # TODO: move all this stuff to a bash script to improve startup times?
     # configure monitors via nvidia settings. requires mod1+control+r to fix layout
     qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
@@ -124,7 +126,6 @@ def initial_startup_stuff():
     # qtile.cmd_spawn("gwe --hide-window")
     #qtile.cmd_spawn("python /home/yobleck/.moc/mpris2_bridge/moc-mpris/moc_mpris.py")  # allows moc to be controlled by other media keys/kdeconnect
 
-    # TODO: need /usr/lib/klauncher --fd=8 kdeinit5 kinit kactivitymanagerd kioclient exec .exe and kded5 so kde apps start quickly?
     #qtile.cmd_spawn("kill -2 kglobalaccel5")
     #above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
     qtile.cmd_spawn("kill -2 kwalletd5")
@@ -142,10 +143,21 @@ def startup_stuff():
     #subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
     qtile.cmd_spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
     int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
+    
 
-#import time
 @hook.subscribe.startup_complete
 def startup_complete_stuff():
+    try:
+        log_test("starting desktop icon test")
+        test_icon_1 = desktop_icons.simple_icon("vlc", "/usr/share/icons/hicolor/128x128/apps/vlc.png", "vlc", 20,20,100)
+        test_icon_2 = desktop_icons.simple_icon("vba", "/usr/share/icons/hicolor/128x128/apps/visualboyadvance-m.png",
+            "visualboyadvance-m", 200,200,50)
+        test_icon_3 = desktop_icons.xdg_desktop_icon("/usr/share/applications/org.kde.kcalc.desktop", 500, 500, 50)
+        #icons = desktop_icons.desktop_icons([test_icon_1, test_icon_2, test_icon_3])
+
+        #win_pre.after_startup()
+    except Exception as e:
+        log_test(e)
     pass
     """
     log_test("hiding top bar")
@@ -171,9 +183,29 @@ def shutdown_stuff():
     #kill xbindkeys and xautolock
     pass
 
+# window preview stuff
+try:
+    win_pre = window_preview.window_preview()
+except Exception as e:
+    log_test(e)
+
+@hook.subscribe.client_focus
+def client_focus_stuff(window):
+    # take screenshot of window when focused
+    win_pre.screenshot(window.wid)
+
+@hook.subscribe.client_killed
+def client_killed_stuff(window):
+    # remove screenshot file of window when killed
+    win_pre.clear_file(window.wid)
+
+# @hook.subscribe.client_mouse_enter
+# def client_mouse_enter_stuff(window):
+#     win.screenshot(window.wid)
+
 
 @hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
-def kde_widgets(window):
+def client_managed_stuff(window):
     if window.window.get_wm_class()[0] == "plasmawindowed":
         #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
         #time.sleep(0.5);
@@ -208,6 +240,9 @@ def kde_widgets(window):
         #log_test(w)
         if len(w) < 2 and window.floating == False:
             window.group.layout.cmd_client_to_stack(1)
+
+    # take screenshot of window for preview when window created
+    win_pre.screenshot(window.wid)
 
 
 """@hook.subscribe.group_window_add
@@ -255,7 +290,7 @@ terminal = guess_terminal()
 def tee(s):
     log_test(s)
 keys = [
-    #Key([mod], "o", ac.lazy_next_layout(), desc="test function"),  #lazy.function(ac.get_bar_text) #ac.lazy_function(tee, "func_test")
+    #Key([mod], "o", lazy.function(win_pre.after_startup), desc="test function"),
     #Key([mod, "shift"], "o", lazy.function(ac.play_audio, "mod o"), desc="test function 2"),
     # Switch between windows in current stack pane
     Key(["mod1"], "Tab", lazy.layout.down(),
@@ -426,7 +461,7 @@ screens = [
                             ),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill}
+                                mouse_callbacks={"Button2": tasklist_kill, "Button3": win_pre.show_preview}
                                 ),  # TODO: test padding and margin with east asian chars
                 #widget.WindowName(parse_text=parse),
                 #widget.WindowTabs(parse_text=parse),
@@ -472,7 +507,7 @@ screens = [
                 widget.TextBox("|", foreground="#00aa00"),
                 widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
                                 parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill}
+                                mouse_callbacks={"Button2": tasklist_kill, "Button3": win_pre.show_preview}
                                 ),
                 widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono",
                            mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s"),
@@ -575,7 +610,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="Panda3D"),
     Match(wm_class="Xephyr"),
     Match(wm_class="Vncviewer"),
-    Match(wm_class="Visualboyadvance-m"),
+    Match(wm_class="visualboyadvance-m"),
     Match(title="Event Tester"),
     Match(title="Default - Wine desktop"),
 ],
