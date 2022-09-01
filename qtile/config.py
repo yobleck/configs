@@ -149,13 +149,11 @@ def startup_stuff():
 def startup_complete_stuff():
     try:
         log_test("starting desktop icon test")
-        test_icon_1 = desktop_icons.simple_icon("vlc", "/usr/share/icons/hicolor/128x128/apps/vlc.png", "vlc", 20,20,100)
+        test_icon_1 = desktop_icons.simple_icon("vlc", "/usr/share/icons/hicolor/128x128/apps/vlc.png", "vlc", 20,10,100)
         test_icon_2 = desktop_icons.simple_icon("vba", "/usr/share/icons/hicolor/128x128/apps/visualboyadvance-m.png",
             "visualboyadvance-m", 200,200,50)
-        test_icon_3 = desktop_icons.xdg_desktop_icon("/usr/share/applications/org.kde.kcalc.desktop", 500, 500, 50)
-        #icons = desktop_icons.desktop_icons([test_icon_1, test_icon_2, test_icon_3])
-
-        #win_pre.after_startup()
+        test_icon_3 = desktop_icons.xdg_desktop_icon("/usr/share/applications/org.kde.kcalc.desktop", 3000, 500, 50)
+        icons = desktop_icons.desktop_icons([test_icon_1, test_icon_2, test_icon_3])
     except Exception as e:
         log_test(e)
     pass
@@ -183,6 +181,7 @@ def shutdown_stuff():
     #kill xbindkeys and xautolock
     pass
 
+
 # window preview stuff
 try:
     win_pre = window_preview.window_preview()
@@ -199,9 +198,10 @@ def client_killed_stuff(window):
     # remove screenshot file of window when killed
     win_pre.clear_file(window.wid)
 
-# @hook.subscribe.client_mouse_enter
-# def client_mouse_enter_stuff(window):
-#     win.screenshot(window.wid)
+@hook.subscribe.client_name_updated
+def client_name_updated_stuff(window):
+    if window == qtile.current_window:
+        win_pre.screenshot(window.wid)
 
 
 @hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
@@ -242,7 +242,7 @@ def client_managed_stuff(window):
             window.group.layout.cmd_client_to_stack(1)
 
     # take screenshot of window for preview when window created
-    win_pre.screenshot(window.wid)
+    win_pre.screenshot(window.wid, 2)
 
 
 """@hook.subscribe.group_window_add
@@ -536,7 +536,6 @@ screens = [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
                              mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  for text version noto fonts only
                 widget.Spacer(),
-                #widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg"),  # TODO 2 images for open and close
                 py_repl.REPL(text="", foreground="#00aa00", font="Noto Mono", fontsize=18,
                              win_foreground="#00aa00", win_pos=(100,100), win_size=(800,800),
                              win_font="Noto Mono", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
