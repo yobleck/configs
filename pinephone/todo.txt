@@ -1,0 +1,41 @@
+log file paths correct?
+
+touch screen driver
+	touchegg
+	evdev-right-click-emulation
+	xf86-input-evdev
+
+qtile popup menu for system settings
+	screen brightness
+	xrandr --output DSI-1 --brightness 0.0-1.0
+	flashlight
+	/sys/devices/platform/led-controller/leds/white:flash/brightness
+	volume
+	pulsemixer --(g/s)et-volume 0-100
+	auto rotate screen
+	?
+
+buy attachment keyboard?
+
+onscreen keyboard (onboard) starting pos
+	tiled window not floating?
+
+sleep function
+
+audio on startup
+
+alarm when asleep or turned off
+
+phonecall/sms (or just buy flip/sidekick phone)
+
+bluetooth
+
+camera, music, calculator, unit converter
+
+gwenviewer for images
+jre for minecraft?
+kalarm,kate, kcalc?
+kdeconnect
+okular
+gui netowrk manager
+wget
