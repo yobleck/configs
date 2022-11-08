@@ -24,11 +24,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+###WARNING TODO CMD_ PREFIX IS BEING REMOVED
 from typing import List  # noqa: F401
 #import subprocess, time
-
-from xcffib.xproto import EventMask
 
 from libqtile import bar, layout, widget, extension, hook, qtile
 from libqtile.config import Click, Drag, Group, Key, Match, Screen  # , KeyChord
@@ -37,10 +35,12 @@ from libqtile.utils import guess_terminal  # , send_notification #used for popup
 
 import accessibility as ac
 import desktop_icons
+from fah_widget import fah
 from floating_window_snapping import move_snap_window
 import internal_modifications as int_mod
 import py_repl
-import window_preview
+import quick_settings_menu as qsm
+#import window_preview
 
 
 ###Helper functions###
@@ -91,6 +91,12 @@ def tasklist_kill():  # kill current window when mouse middle clicks on tasklist
         if w.name == "tasklist":
             w.clicked.kill()
             break
+
+# window preview stuff
+# try:
+#     win_pre = window_preview.window_preview()
+# except Exception as e:
+#     log_test(e)
 
 
 ###HOOKS###
@@ -143,68 +149,35 @@ def startup_stuff():
     #subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
     qtile.cmd_spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
     int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
-    
+
 
 @hook.subscribe.startup_complete
 def startup_complete_stuff():
-    try:
-        log_test("starting desktop icon test")
-        test_icon_1 = desktop_icons.simple_icon("vlc", "/usr/share/icons/hicolor/128x128/apps/vlc.png", "vlc", 20,10,100)
-        test_icon_2 = desktop_icons.simple_icon("vba", "/usr/share/icons/hicolor/128x128/apps/visualboyadvance-m.png",
-            "visualboyadvance-m", 200,200,50)
-        test_icon_3 = desktop_icons.xdg_desktop_icon("/usr/share/applications/org.kde.kcalc.desktop", 3000, 500, 50)
-        icons = desktop_icons.desktop_icons([test_icon_1, test_icon_2, test_icon_3])
-    except Exception as e:
-        log_test(e)
     pass
-    """
-    log_test("hiding top bar")
-    log_test(qtile.current_screen.height)
-    qtile.focus_screen(1, warp = False)
-    log_test(qtile.current_screen.height)
-    for s in qtile.screens:  # TODO not working on first startup. Qtile v0.18.1
-        if s.height == 1440:
-            log_test(s.get_rect())
-            #qtile.cmd_hide_show_bar("top")
-            toggle_bar(qtile, "top")
-            #s.top.show(is_show=False)  # Hide top bar by default
-            #s.group.layout_all()  # maybe this isnt running for some reason
-            #qtile.current_group().layout_all()
-            log_test(s.get_rect())
-            log_test("top bar hidden")
-            #pass"""
 
 
 @hook.subscribe.shutdown
 def shutdown_stuff():
     qtile.cmd_spawn("pkill mocp")
-    #kill xbindkeys and xautolock
     pass
-
-
-# window preview stuff
-try:
-    win_pre = window_preview.window_preview()
-except Exception as e:
-    log_test(e)
 
 @hook.subscribe.client_focus
 def client_focus_stuff(window):
     # take screenshot of window when focused
     win_pre.screenshot(window.wid)
 
-@hook.subscribe.client_killed
-def client_killed_stuff(window):
-    # remove screenshot file of window when killed
-    win_pre.clear_file(window.wid)
+# @hook.subscribe.client_killed
+# def client_killed_stuff(window):
+#     # remove screenshot file of window when killed
+#     win_pre.clear_file(window.wid)
 
-@hook.subscribe.client_name_updated
-def client_name_updated_stuff(window):
-    if window == qtile.current_window:
-        win_pre.screenshot(window.wid)
+# @hook.subscribe.client_name_updated
+# def client_name_updated_stuff(window):
+#     if window == qtile.current_window:
+#         win_pre.screenshot(window.wid)
 
 
-@hook.subscribe.client_managed  # TODO: put cal and start in scratchpad?
+@hook.subscribe.client_managed
 def client_managed_stuff(window):
     if window.window.get_wm_class()[0] == "plasmawindowed":
         #log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
@@ -221,20 +194,20 @@ def client_managed_stuff(window):
             #time.sleep(0.5)
             #qtile.cmd_spawn("wmctrl -r \'Application Menu\' -e 0,0,949,273,467")  # old new menu
             #qtile.cmd_spawn("xdotool search \"Legacy Application Launcher\" windowsize 468 612 windowmove 0 802")  # windowsize 416 544
-        
-        if(window.window.get_name() == "Audio Volume"):
+
+        elif window.window.get_name() == "Audio Volume":
             #time.sleep(0.5);
             qtile.cmd_spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
 
-    if window.window.get_wm_class()[0] == "subl":
+    elif window.window.get_wm_class()[0] == "subl" and window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
         # log_test("sublime detected")
         # log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
         # Automatically hide sublime buy license popup
-        if window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
+        #if window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
             # log_test("killed sublime popup")
-            window.kill()
+        window.kill()
 
-    if window.group.layout.name == "stack":
+    elif window.group.layout.name == "stack":
         # filter out floating windows including FAHStats 
         w = [w for w in window.group.windows if (False, False) == (w.floating, w.minimized)]
         #log_test(w)
@@ -242,47 +215,8 @@ def client_managed_stuff(window):
             window.group.layout.cmd_client_to_stack(1)
 
     # take screenshot of window for preview when window created
-    win_pre.screenshot(window.wid, 2)
+    #win_pre.screenshot(window.wid, 2)
 
-
-"""@hook.subscribe.group_window_add
-def test(group, window):
-    log_test(group)
-    log_test(window)
-    window.group = group
-    try:
-        log_test(window.group.layout.name)
-    except Exception as e:
-        log_test(e)
-    if group.layout.name == "stack":
-        # filter out floating windows including FAHStats 
-        w = [w for w in window.group.windows if (False, False) == (w.floating, w.minimized)]
-        log_test(w)
-        #log_test(w)
-        if len(w) < 1:
-            try:
-                #log_test(dir(window.group.layout))
-                #window.focus(warp=False)
-                #group.layout.focus(window)
-                #window.group.layout.cmd_client_to_stack(1)
-                #group.layout.cmd_client_to_stack(1)
-                
-                group.layout.current_stack.remove(window)
-                group.layout.stacks[1].add(window)
-                group.layout.stacks[1].focus(window)
-                group.layout_all()
-                log_test("should work")
-            except Exception as e:
-                log_test(e)"""
-
-"""@hook.subscribe.screen_change
-def sc(e):
-    log_test("screen_change")
-    log_test(e)
-@hook.subscribe.screens_reconfigured
-def sr():
-    log_test("screens_reconfigured")"""
-    
 
 ###KEY BINDS###
 mod = "mod4"  # TODO change to meta
@@ -322,22 +256,23 @@ keys = [
     # Split = all windows displayed
     # Unsplit = 1 window displayed, like Max layout, but still with
     # multiple stack panes
-    Key([mod, "shift"], "Return", lazy.layout.toggle_split(),
-        desc="Toggle between split and unsplit sides of stack"),  # other behavior with columns
+    #Key([mod, "shift"], "Return", lazy.layout.toggle_split(),
+        #desc="Toggle between split and unsplit sides of stack"),  # other behavior with columns
     # Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
     # Key([mod], "Return", lazy.spawn("konsole"), desc="Launch terminal"), # --style gtk2
 
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
     Key([mod, "shift"], "Tab", lazy.prev_layout(), desc="Toggle between layouts backwards"),
-    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),  # repkace with alt f4?
+    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),  # replace with alt f4?
 
     Key([mod, "control"], "r", lazy.reload_config(), desc="Reload qtile config"),
     Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),
     Key([mod, "control", "shift"], "q", lazy.shutdown(), desc="Shutdown qtile"),
     Key([mod, "mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
-    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=20, j4dmenu_generic=False, dmenu_ignorecase=True, dmenu_bottom=True))),
+    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=10, j4dmenu_generic=False, dmenu_font="Noto Mono",
+                                                                dmenu_ignorecase=True, dmenu_bottom=True, j4dmenu_terminal=terminal))),
     Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"),
         # lazy.function(vsync_toggle),
         desc="toggle nvidia ForceCompositionPipeline"),
@@ -362,7 +297,7 @@ keys = [
 
     # Run various programs
     #KeyChord(["control", "mod1"], "z", [
-        Key(["control", "mod1"], "e", lazy.spawn("dolphin"), desc="launch dolphin file manager"),  # --style gtk2 export QT_QPA_PLATFORMTHEME=\"qt5ct\"
+        Key(["control", "mod1"], "e", lazy.spawn("dolphin"), desc="launch dolphin file manager"),
         Key(["control", "mod1"], "r", lazy.spawn("konsole"), desc="launch konsole"),
         Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
         Key(["control", "mod1"], "h", lazy.spawn("konsole -e htop"), desc="launch htop"),
@@ -399,7 +334,7 @@ keys = [
 ###GROUPS AND LAYOUTS###
 groups = []
 groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
-groups.append(Group("2nd", layout="stack", spawn="python /home/yobleck/fah/fah_stats.py", matches=[Match(wm_class=["dolphin"])]))
+groups.append(Group("2nd", layout="stack", matches=[Match(wm_class=["dolphin"])]))  #, spawn="python /home/yobleck/fah/fah_stats.py"
 groups.append(Group("F@H", layout="stack", spawn=["konsole", "FAHControl"]))
 #groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
 groups.append(Group("vg", matches=[Match(wm_class=["Steam", "MultiMC", "hl2_linux"])]))  # TODO: add video game match rules 
@@ -436,8 +371,9 @@ layouts = [
 
 ###SCREENS###
 widget_defaults = dict(
-    font='sans',
+    font="Noto Mono",
     fontsize=12,
+    foreground="#00aa00",
     padding=3,
 )
 extension_defaults = widget_defaults.copy()
@@ -447,25 +383,24 @@ screens = [
     Screen(  # 1920x1080_144
         bottom=bar.Bar(
             [
-                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
-                                                                                              "Button4": lambda: qtile.cmd_prev_layout(),
-                                                                                              "Button5": lambda: qtile.cmd_next_layout()}
+                widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
+                                                      "Button4": lambda: qtile.cmd_prev_layout(),
+                                                      "Button5": lambda: qtile.cmd_next_layout()}
                                     ),
-                widget.TextBox("|", foreground="#00aa00"),
-                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
+                widget.TextBox("|"),
+                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
                 #TODO: look at source code and find out how to disable click on focused group causing switch to another group
-                widget.TextBox("|", foreground="#00aa00"),
+                widget.TextBox("|"),
                 widget.Prompt(ignore_dups_history=True),
                 widget.Chord(  # multi key binds but not holding all keys down at same time
                              chords_colors={'launch': ("#ff0000", "#ffffff"), }, name_transform=lambda name: name.upper(),
                             ),
-                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
-                                parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill, "Button3": win_pre.show_preview}
+                widget.TaskList(border="#00aa00", parse_text=parse,
+                                mouse_callbacks={"Button2": tasklist_kill}#, "Button3": win_pre.show_preview}
                                 ),  # TODO: test padding and margin with east asian chars
                 #widget.WindowName(parse_text=parse),
                 #widget.WindowTabs(parse_text=parse),
-                widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100, font="Noto Mono"),
+                widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100),
                 widget.Systray(),
                 #custom_command=("pamac checkupdates",3)   "sh /home/yobleck/.config/qtile/test.sh 1"   ("pamac checkupdates -q", 0)
                 #widget.CheckUpdates(distro="Arch", execute="pamac-manager", update_interval="600", no_update_string=" U ",
@@ -473,9 +408,9 @@ screens = [
                                     #),
                 widget.CheckUpdates(custom_command="pamac checkupdates -q; echo -n",  # custom_command_modify = (lambda x: x/2-1),
                                     execute="pamac-manager", update_interval="600", display_format="U:{updates}",
-                                    no_update_string=" U ", font="Noto Mono", colour_no_updates="#00aa00", colour_have_updates="#880000",
+                                    no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#880000",
                                     ),  # TODO error_string when added in next update
-                widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono",
+                widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, update_interval=60,
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
                              ),
                 #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
@@ -497,19 +432,17 @@ screens = [
                                  #default_icon="/usr/share/icons/manjaro/maia/maia.svg"),
                 #widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",  # green.svg
                              #mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.kickofflegacy")}),
-                widget.CurrentLayout(foreground="#00aa00", font="Noto Mono", mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
-                                                                                              "Button4": lambda: qtile.cmd_prev_layout(),
-                                                                                              "Button5": lambda: qtile.cmd_next_layout()
-                                                                                              }
+                widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
+                                                      "Button4": lambda: qtile.cmd_prev_layout(),
+                                                      "Button5": lambda: qtile.cmd_next_layout()}
                                     ),
-                widget.TextBox("|", foreground="#00aa00"),
-                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, font="Noto Mono"),
-                widget.TextBox("|", foreground="#00aa00"),
-                widget.TaskList(foreground="#00aa00", border="#00aa00", font="Noto Mono",
-                                parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill, "Button3": win_pre.show_preview}
+                widget.TextBox("|"),
+                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
+                widget.TextBox("|"),
+                widget.TaskList(border="#00aa00",parse_text=parse,
+                                mouse_callbacks={"Button2": tasklist_kill}#, "Button3": win_pre.show_preview}
                                 ),
-                widget.Moc(foreground="#00aa00", update_interval=2, font="Noto Mono",
+                widget.Moc(foreground="#00aa00", update_interval=2,
                            mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s"),
                                             "Button4": lambda: qtile.cmd_spawn("mocp -r"),
                                             "Button5": lambda: qtile.cmd_spawn("mocp -f"),
@@ -520,10 +453,9 @@ screens = [
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
-                              foreground="#00aa00", font="Noto Mono",
                               mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.volume")}
                               ),
-                widget.Clock(format='%a %H:%M', fontsize=18, foreground="#00aa00", font="Noto Mono",
+                widget.Clock(format='%a %H:%M', fontsize=18, update_interval=30,
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
                              ),
                 #widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(1)}, font="Noto Mono"),
@@ -535,27 +467,33 @@ screens = [
             [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
                              mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  for text version noto fonts only
+                fah.FaH(username="yobleck", json=True, is_popup=True, popup_struct=(5,1330,160,80,"#00aa00",1), update_interval=600),
+                # qsm.Menu(button_list=[
+                #     qsm.Button(text="Brightness Down", icon_path="~/.config/qtile/icons/low-brightness.svg", is_toggle=False, grid_pos=(0,0)),
+                #     qsm.Button(text="Brightness Up", icon_path="~/.config/qtile/icons/high-brightness.svg", is_toggle=False, grid_pos=(1,0)),
+                #     qsm.Button(text="Flashlight", icon_path="~/.config/qtile/icons/flashlight-on.svg", is_toggle=True, grid_pos=(2,0)),
+                #     qsm.Button(text="Screen Rotation", icon_path="~/.config/qtile/icons/smartphone.svg", is_toggle=True, grid_pos=(0,1)),
+                #     qsm.Button(text="Wifi", icon_path="~/.config/qtile/icons/network-wireless-connected-100.svg", is_toggle=True, grid_pos=(1,1)),
+                #     qsm.Button(text="Bluetooth", icon_path="~/.config/qtile/icons/network-bluetooth.svg", is_toggle=True, grid_pos=(2,1)),
+                #     ]),
                 widget.Spacer(),
-                py_repl.REPL(text="", foreground="#00aa00", font="Noto Mono", fontsize=18,
+                py_repl.REPL(text="", fontsize=18,
                              win_foreground="#00aa00", win_pos=(100,100), win_size=(800,800),
                              win_font="Noto Mono", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
                              win_opacity=0.9  # text=" PY REPL"
                              ),
-                #widget.Image(filename="/home/yobleck/.config/qtile/icons/pythonbackend.svg",
-                             #mouse_callbacks={"Button1": simple_repl}),
                 # TODO kde system settings icon
-                widget.TextBox(" ", foreground="#00aa00"),
+                widget.TextBox(" "),
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/htop.svg",
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("konsole -e htop")}
                              ),
-                widget.CPU(foreground="#00aa00", font="Noto Mono", format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
+                widget.CPU(format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
                 widget.ThermalSensor(foreground="#00aa00", font="Noto Mono", tag_sensor="Tctl", threshold=80, update_interval=2),
-                widget.CPUGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
-                widget.Memory(foreground="#00aa00", font="Noto Mono", format="| Mem: {MemUsed:05.0f}{mm}B", update_interval=2),
-                widget.Net(foreground="#00aa00", font="Noto Mono", format="| Net: {down} ↓↑ {up}", update_interval=2),
-                widget.NetGraph(frequency=2, font="Noto Mono", fill_color="#00330055", graph_color="#00aa00"),
-                widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", font="Noto Mono",
-                                     threshold=80, update_interval=2),
+                widget.CPUGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
+                widget.Memory(format="| Mem: {MemUsed:05.0f}{mm}B", update_interval=2),
+                widget.Net(format="| Net: {down} ↓↑ {up}", update_interval=2),
+                widget.NetGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
+                widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", threshold=80, update_interval=2),
             ],
             24,
             background=["#00330088", "#00000055", "#00000022", "#00000000"],
@@ -610,8 +548,10 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="Xephyr"),
     Match(wm_class="Vncviewer"),
     Match(wm_class="visualboyadvance-m"),
+    Match(wm_class="megasync"),
     Match(title="Event Tester"),
     Match(title="Default - Wine desktop"),
+    Match(title="SAF"),
 ],
     no_reposition_rules=[  # TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
         Match(wm_class="FAHStats"),
