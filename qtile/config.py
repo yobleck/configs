@@ -26,12 +26,13 @@
 # SOFTWARE.
 # WARNING TODO CMD_ PREFIX IS BEING REMOVED
 from typing import List  # noqa: F401
-# import subprocess, time
+# import subprocess
+# import time
 
 from libqtile import bar, layout, widget, extension, hook, qtile
 from libqtile.config import Click, Drag, Group, Key, Match, Screen  # , KeyChord
 from libqtile.lazy import lazy
-from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
+# from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
 import accessibility as ac
 import desktop_icons
@@ -62,7 +63,7 @@ def toggle_bar(qtile, *args):  # Helper function for bar visibility
 
 def parse(text):  # Function for editing displayed wm_name
     for string in [" - YouTube", " \u2014 Mozilla Firefox", " \u2014 Konsole", "  \u2014 Kate", " \u2014 Dolphin", " - Chromium",
-                   "Media Player Classic Qute Theater - ", " (UNREGISTERED)"]:
+                   "Media Player Classic Qute Theater - ", " (UNREGISTERED)", "yobleck@yobleck-pc: "]:
         text = text.replace(string, "")
     return text
 
@@ -105,7 +106,9 @@ def tasklist_kill():  # kill current window when mouse middle clicks on tasklist
 def startup_once_stuff():
     # TODO: move all this stuff to a bash script to improve startup times?
     # configure monitors via nvidia settings. requires mod1+control+r to fix layout
-    qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
+    # qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
+    qtile.cmd_spawn("nvidia-settings --assign CurrentMetaMode='DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}, DPY-3: nvidia-auto-select @2560x1440 +0+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}'")
+    # qtile.cmd_spawn("xrandr --output DP-0 --primary --mode 2560x1440 --rate 165 --output DP-2 --mode 2560x1440 --rate 60 --left-of DP-0")
     # loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
     qtile.cmd_spawn("picom")  # compositor for window animations and transparency
 
@@ -221,19 +224,24 @@ def client_managed_stuff(window):
 
 # __KEY BINDS__
 mod = "mod4"  # TODO change to meta
-terminal = guess_terminal()
+terminal = "kitty"  # guess_terminal()
 def tee(s):
     log_test(s)
 keys = [
     # Key([mod], "o", lazy.function(move_to_screen), desc="test function"),
     # Key([mod, "shift"], "o", lazy.function(ac.play_audio, "mod o"), desc="test function 2"),
-    # Switch between windows in current stack pane
-    Key(["mod1"], "Tab", lazy.layout.down(),
-        desc="Move focus down in stack pane"),
-    Key(["mod1", "shift"], "Tab", lazy.layout.up(),
-        desc="Move focus up in stack pane"),
 
-    # move windows around in the columns layout
+    # Cycle through windows
+    Key(["mod1"], "Tab", lazy.layout.down(),
+        desc="Cycle through all windows"),
+    Key(["mod1", "shift"], "Tab", lazy.layout.up(),
+        desc="Cycle through all windows in reverse"),
+    Key([mod], "space", lazy.layout.next(),
+        desc="Cycle through windows in column"),
+    Key([mod, "shift"], "space", lazy.layout.previous(),
+        desc="Cycle through windows in column in reverse"),
+
+    # Move windows around in the columns layout
     Key([mod, "shift"], "Down", lazy.layout.shuffle_down(),
         desc="Move window down in current stack "),
     Key([mod, "shift"], "Up", lazy.layout.shuffle_up(),
@@ -243,40 +251,22 @@ keys = [
     Key([mod, "shift"], "Right", lazy.layout.shuffle_right(),
         desc="Move window right in current stack "),
 
-    # Switch window focus to other pane(s) of stack layout
-    Key([mod], "space", lazy.layout.next(),
-        desc="Switch window focus to other pane(s) of stack"),
-    # Move window to another pane in stack layout
-    Key([mod, "shift"], "space", lazy.layout.client_to_next(),
-        desc="move window to other pane of split stack"),
-    # Swap panes of split stack
-    Key([mod, "control"], "space", lazy.layout.rotate(),
-        desc="swap panes of split stack"),
-
-    # Toggle between split and unsplit sides of stack.
-    # Split = all windows displayed
-    # Unsplit = 1 window displayed, like Max layout, but still with
-    # multiple stack panes
-    # Key([mod, "shift"], "Return", lazy.layout.toggle_split(),
-        # desc="Toggle between split and unsplit sides of stack"),  # other behavior with columns
-    # Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
-    # Key([mod], "Return", lazy.spawn("konsole"), desc="Launch terminal"), # --style gtk2
-
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
-    Key([mod, "shift"], "Tab", lazy.prev_layout(), desc="Toggle between layouts backwards"),
+    Key([mod, "shift"], "Tab", lazy.prev_layout(), desc="Toggle between layouts in reverse"),
+
     Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),  # replace with alt f4?
 
     Key([mod, "control"], "r", lazy.reload_config(), desc="Reload qtile config"),
     Key([mod, "control", "shift"], "r", lazy.restart(), desc="Restart qtile"),
     Key([mod, "control", "shift"], "q", lazy.shutdown(), desc="Shutdown qtile"),
+
     Key([mod, "mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
-    Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
-    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=10, j4dmenu_generic=False, dmenu_font="Noto Mono",
+    # Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
+    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=10, j4dmenu_generic=False, dmenu_font="Hack",
                                                                 dmenu_ignorecase=True, dmenu_bottom=True, j4dmenu_terminal=terminal))),
-    Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"),
-        # lazy.function(vsync_toggle),
-        desc="toggle nvidia ForceCompositionPipeline"),
+
+    # Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"), desc="toggle nvidia ForceCompositionPipeline"),
     Key([mod, "control"], "b", lazy.function(toggle_bar, "bottom"), desc="toggle bar visibility"),
     Key([mod, "control"], "t", lazy.function(toggle_bar, "top"), desc="toggle bar visibility"),
     Key([mod, "control"], "c", lazy.function(cycle_wallpaper), desc="cycle main and black wallpaper"),
@@ -298,22 +288,19 @@ keys = [
 
     # Run various programs
     Key(["control", "mod1"], "e", lazy.spawn("dolphin"), desc="launch dolphin file manager"),
-    Key(["control", "mod1"], "r", lazy.spawn("konsole"), desc="launch konsole"),
+    Key(["control", "mod1"], "r", lazy.spawn(terminal), desc="launch terminal emulator"),
     Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
-    Key(["control", "mod1"], "h", lazy.spawn("konsole -e htop"), desc="launch htop"),
-    Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch firefox"),
-    Key(["control", "mod1"], "y", lazy.spawn("konsole -e ~/yt_dwnld.sh"), desc="launch youtube audio downloader"),
+    Key(["control", "mod1"], "h", lazy.spawn(f"{terminal} btm"), desc="launch process manager"),
+    Key(["control", "shift"], "Escape", lazy.spawn(f"{terminal} btm"), desc="launch task manager"),
+    Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch Firefox"),
+    Key(["control", "mod1"], "y", lazy.spawn(f"{terminal} /home/yobleck/yt_dwnld.sh"), desc="launch YouTube audio downloader"),
     Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
     Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
-    # Key(["control", "mod1"], "Escape", lazy.spawn("ksysguard"), desc="launch task manager"),
-    Key(["control", "mod1"], "p", lazy.spawn("spectacle"), desc="launch scpectacle"),
-    Key([mod], "Print", lazy.spawn("spectacle"), desc="launch scpectacle"),
+    Key(["control", "mod1"], "p", lazy.spawn("spectacle"), desc="launch spectacle"),
+    Key([mod], "Print", lazy.spawn("spectacle"), desc="launch spectacle"),
     # mod + . for emoji selector
 
     # lock screen #https://github.com/Raymo111/i3lock-color/blob/master/examples/lock.sh
-    # Key([mod], "l", lazy.spawn("i3lock -n --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\""),
-        # desc="lock screen with i3lock"),
-    # Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker i3lock"), desc="lock screen with i3lock"),
     Key([mod], "l", lazy.spawn("xautolock -locknow -nowlocker /home/yobleck/.config/qtile/locker.sh"), desc="lock screen with i3lock"),
     # work around to turn screen back on after locking: lazy.spawn("xset force reset"),
 
@@ -334,8 +321,8 @@ keys = [
 # __GROUPS AND LAYOUTS__
 groups = []
 groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
-groups.append(Group("2nd", layout="stack", matches=[Match(wm_class=["dolphin"])]))  # , spawn="python /home/yobleck/fah/fah_stats.py"
-groups.append(Group("F@H", layout="stack", spawn=["konsole", "FAHControl"]))
+groups.append(Group("2nd", layout="columns", matches=[Match(wm_class=["dolphin"])]))  # , spawn="python /home/yobleck/fah/fah_stats.py"
+groups.append(Group("F@H", layout="columns", spawn=[terminal, "FAHControl"]))
 # groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
 groups.append(Group("vg", matches=[Match(wm_class=["Steam", "MultiMC", "hl2_linux"])]))  # TODO: add video game match rules 
 
@@ -351,7 +338,7 @@ for g in g_list.items():
 # log_test("\n\n\ncreating layouts\n");
 layouts = [
     layout.Max(),
-    layout.Stack(num_stacks=2, border_focus="#00aa00"),
+    # layout.Stack(num_stacks=2, border_focus="#00aa00"),
     # Try more layouts by unleashing below layouts.
     # layout.Bsp(),
     layout.Columns(border_focus="#00aa00", border_width=1),
@@ -371,7 +358,7 @@ layouts = [
 
 # __SCREENS__
 widget_defaults = dict(
-    font="Noto Mono",
+    font="Hack",
     fontsize=12,
     foreground="#00aa00",
     padding=3,
@@ -386,17 +373,17 @@ screens = [
                 widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
                                                       "Button4": lambda: qtile.cmd_prev_layout(),
                                                       "Button5": lambda: qtile.cmd_next_layout()}
-                                    ),
+                                     ),
                 widget.TextBox("|"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
                 # TODO: look at source code and find out how to disable click on focused group causing switch to another group
                 widget.TextBox("|"),
                 widget.Prompt(ignore_dups_history=True),
                 widget.Chord(  # multi key binds but not holding all keys down at same time
-                             chords_colors={'launch': ("#ff0000", "#ffffff"), }, name_transform=lambda name: name.upper(),
-                            ),
+                    chords_colors={'launch': ("#ff0000", "#ffffff"), }, name_transform=lambda name: name.upper(),
+                ),
                 widget.TaskList(border="#00aa00", parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill}#, "Button3": win_pre.show_preview}
+                                mouse_callbacks={"Button2": tasklist_kill}  # , "Button3": win_pre.show_preview}
                                 ),  # TODO: test padding and margin with east asian chars
                 # widget.WindowName(parse_text=parse),
                 # widget.WindowTabs(parse_text=parse),
@@ -405,7 +392,7 @@ screens = [
                 # custom_command=("pamac checkupdates",3)   "sh /home/yobleck/.config/qtile/test.sh 1"   ("pamac checkupdates -q", 0)
                 # widget.CheckUpdates(distro="Arch", execute="pamac-manager", update_interval="600", no_update_string=" U ",
                                     # colour_no_updates="#00aa00", colour_have_updates="#aa0000", custom_command_modify = (lambda x: x/2-1),
-                                    #),
+                                    # ),
                 widget.CheckUpdates(custom_command="pamac checkupdates -q; echo -n",  # custom_command_modify = (lambda x: x/2-1),
                                     execute="pamac-manager", update_interval="600", display_format="U:{updates}",
                                     no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#880000",
@@ -414,7 +401,7 @@ screens = [
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
                              ),
                 # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
-                # widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(0)}, font="Noto Mono"),
+                # widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(0)}),
             ],
             24,
             background=["#00000000", "#00000022", "#00000055", "#00330088"],  # bar background
@@ -428,19 +415,15 @@ screens = [
     Screen(  # 2560x1440_60
         bottom=bar.Bar(
             [
-                # widget.LaunchBar(progs=[("start", "plasmawindowed org.kde.plasma.kicker", "kde start menu")],
-                                 # default_icon="/usr/share/icons/manjaro/maia/maia.svg"),
-                # widget.Image(filename="/usr/share/icons/manjaro/green/24x24.png",  # green.svg
-                             # mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.kickofflegacy")}),
                 widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
                                                       "Button4": lambda: qtile.cmd_prev_layout(),
                                                       "Button5": lambda: qtile.cmd_next_layout()}
-                                    ),
+                                     ),
                 widget.TextBox("|"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
                 widget.TextBox("|"),
-                widget.TaskList(border="#00aa00",parse_text=parse,
-                                mouse_callbacks={"Button2": tasklist_kill}#, "Button3": win_pre.show_preview}
+                widget.TaskList(border="#00aa00", parse_text=parse,
+                                mouse_callbacks={"Button2": tasklist_kill}  # , "Button3": win_pre.show_preview}
                                 ),
                 widget.Moc(foreground="#00aa00", update_interval=2,
                            mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s"),
@@ -458,7 +441,7 @@ screens = [
                 widget.Clock(format='%a %H:%M', fontsize=18, update_interval=30,
                              mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.calendar")}
                              ),
-                # widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(1)}, font="Noto Mono"),
+                # widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(1)}),
             ],
             24,
             background=["#00000000", "#00000022", "#00000055", "#00330088"],  # bar background
@@ -466,7 +449,7 @@ screens = [
         top=bar.Bar(
             [
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
-                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  for text version noto fonts only
+                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  \ue9f1
                 fah.FaH(username="yobleck", json=True, is_popup=True, popup_struct=(5, 1330, 160, 80, "#00aa00", 1), update_interval=600),
                 # qsm.Menu(button_list=[
                 #     qsm.Button(text="Brightness Down", icon_path="~/.config/qtile/icons/low-brightness.svg", is_toggle=False, grid_pos=(0,0)),
@@ -478,17 +461,17 @@ screens = [
                 #     ]),
                 widget.Spacer(),
                 py_repl.REPL(text="", fontsize=18,
-                             win_foreground="#00aa00", win_pos=(100,100), win_size=(800,800),
-                             win_font="Noto Mono", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
+                             win_foreground="#00aa00", win_pos=(100, 100), win_size=(800, 800),
+                             win_font="Hack", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
                              win_opacity=0.9  # text=" PY REPL"
                              ),
                 # TODO kde system settings icon
                 widget.TextBox(" "),
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/htop.svg",
-                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn("konsole -e htop")}
+                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn(f"{terminal} btm")}
                              ),
                 widget.CPU(format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
-                widget.ThermalSensor(foreground="#00aa00", font="Noto Mono", tag_sensor="Tctl", threshold=80, update_interval=2),
+                widget.ThermalSensor(foreground="#00aa00", tag_sensor="Tctl", threshold=80, update_interval=2),
                 widget.CPUGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
                 widget.Memory(format="| Mem: {MemUsed:05.0f}{mm}B", update_interval=2),
                 widget.Net(format="| Net: {down} ↓↑ {up}", update_interval=2),
