@@ -248,6 +248,14 @@ class Col(Layout):
             self.remove_column(c)
         return self.columns[self.current].cw
 
+    def remove_extra_cols(self):
+        for c in self.columns:
+            if len(self.columns) > self.min_columns:
+                if len(c) < 1:
+                    self.remove_column(c)
+            else:
+                break
+
     def configure(self, client, screen_rect):
         while len(self.columns) < self.min_columns:  # added by yobleck
             self.add_column()  # ensures minimum column count on startup. shouldn't run after that
@@ -422,6 +430,7 @@ class Col(Layout):
             new.add(client, cur.heights[client])
             cur.remove(client)
             self.current = 0
+            self.remove_extra_cols()
         else:
             return
         self.group.layout_all()
@@ -438,11 +447,13 @@ class Col(Layout):
             cur.remove(client)
             # if len(cur) == 0:  # removed by yobleck to allow moving window to the right
             #     self.remove_column(cur)
+            self.remove_extra_cols()
         elif len(cur) > 1:
             new = self.add_column()
             new.add(client, cur.heights[client])
             cur.remove(client)
             self.current = len(self.columns) - 1
+            self.remove_extra_cols()
         else:
             return
         self.group.layout_all()
