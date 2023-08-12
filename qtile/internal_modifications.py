@@ -1,15 +1,18 @@
+from datetime import datetime
+import io
+import subprocess
 import sys
 from importlib import metadata
-import io
-
-from xcffib.xproto import EventMask
 
 from libqtile import qtile, images
 from libqtile.popup import Popup
 
+from xcffib.xproto import EventMask
+
 """
 Avoid including `self`
 """
+
 
 def log_test(i):
     f = open("/home/yobleck/.config/qtile/qtile_log.txt", "a")
@@ -44,19 +47,20 @@ def mouse_move(qtile):
 
 ####
 
+
 def simple_start_menu():
-    #https://github.com/m-col/qtile-config/blob/master/notification.py
-    #TODO move definitions outside of this function so that they are only called once
-    #i.e. popup = should be outside but popup.place should remain
+    # https://github.com/m-col/qtile-config/blob/master/notification.py
+    # TODO move definitions outside of this function so that they are only called once
+    # i.e. popup = should be outside but popup.place should remain
     try:
         #log_test(1)
-        popup = Popup(qtile, background="#002200", x=0, y=24, width=100, height=50, font_size=10, border="#ff00ff", border_width=1,
-                    foreground="#ffffff", opacity=0.9)
+        popup = Popup(qtile, background="#000000", x=0, y=24, width=100, height=50, font_size=10, border="#aa00aa",
+                      border_width=1, foreground="#ffffff", opacity=0.9)
 
         popup.place()
         popup.unhide()
         popup.text = "Reboot    Shutdown"
-        popup.draw_text(x=2, y=popup.height-popup.font_size-1)  # TODO don't hard code this
+        popup.draw_text(x=2, y=popup.height - popup.font_size - 1)  # TODO don't hard code this
         #log_test(2)
         popup.draw()
         #log_test(3)
@@ -73,7 +77,7 @@ def simple_start_menu():
             for x in icon_list:
                 s, _ = images._decode_to_image_surface(x.bytes_img, x.width, x.height)
                 surface_list.append(s)
-            [popup.draw_image(s, int(popup.width/len(surface_list))*i, -5) for i, s in enumerate(surface_list)]
+            [popup.draw_image(s, int(popup.width / len(surface_list)) * i, -5) for i, s in enumerate(surface_list)]
             #log_test(4)
         except Exception as e:
             log_test(f"image_load error: {e}")
@@ -82,7 +86,7 @@ def simple_start_menu():
             action_list = ["systemctl reboot", "systemctl poweroff"]
             try:
                 if button == 1:
-                    x_pos = int(x/popup.width*len(action_list))
+                    x_pos = int(x / popup.width * len(action_list))
                     #log_test("clicked on: " + action_list[x_pos])
                     qtile.cmd_spawn(action_list[x_pos])
                 else:
@@ -95,6 +99,54 @@ def simple_start_menu():
         def leave(*args):
             try:
                 #log_test(args)
+                popup.hide()
+                popup.kill()
+            except Exception as e:
+                log_test(f"leave error: {e}")
+        popup.win.process_pointer_leave = leave
+    except Exception as e:
+        log_test(f"popup_test error: {e}")
+
+
+def simple_calendar():
+    try:
+        now = datetime.now()
+        offset = 0
+        popup = Popup(qtile, background="#000000", x=2300, y=1210, width=256, height=200, font="Hack", font_size=20,
+                      border="#aa00aa", border_width=1, foreground="#00aa00", opacity=0.9, text_alignment="center")
+
+        popup.place()
+        popup.unhide()
+        popup.text = subprocess.check_output("cal").decode()
+        popup.draw_text(x=8, y=4)
+        popup.draw()
+        popup.win.window.set_property("_NET_WM_NAME", "simple calendar")
+        popup.win.update_name()
+
+        def click(x, y, button):
+            try:
+                nonlocal offset
+                if button == 1:
+                    offset += 1
+                    popup.clear()
+                    popup.text = subprocess.check_output(f"cal {now.month + offset} {now.year}", shell=True).decode()
+                    popup.draw_text(x=8, y=4)
+                    popup.draw()
+                elif button == 3:
+                    offset -= 1
+                    popup.clear()
+                    popup.text = subprocess.check_output(f"cal {now.month + offset} {now.year}", shell=True).decode()
+                    popup.draw_text(x=8, y=4)
+                    popup.draw()
+                else:
+                    popup.hide()
+                    popup.kill()
+            except Exception as e:
+                log_test(f"click error: {e}")
+        popup.win.process_button_click = click
+
+        def leave(*args):
+            try:
                 popup.hide()
                 popup.kill()
             except Exception as e:
