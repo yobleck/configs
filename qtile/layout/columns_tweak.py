@@ -15,8 +15,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from libqtile.command.base import expose_command
 from libqtile.layout.base import Layout, _ClientList
 from libqtile.log_utils import logger
+
+if TYPE_CHECKING:
+    from typing import Any, Self
+
+    from libqtile.backend.base import Window
+    from libqtile.config import ScreenRect
+    from libqtile.group import _Group
 
 
 class _Column(_ClientList):
@@ -32,6 +44,7 @@ class _Column(_ClientList):
         self.insert_position = insert_position
         self.heights = {}
 
+    @expose_command()
     def info(self):
         info = _ClientList.info(self)
         info.update(
@@ -45,8 +58,8 @@ class _Column(_ClientList):
     def toggle_split(self):
         self.split = not self.split
 
-    def add(self, client, height=100):
-        _ClientList.add(self, client, self.insert_position)
+    def add_client(self, client, height=100):
+        _ClientList.add_client(self, client, self.insert_position)
         self.heights[client] = height
         delta = 100 - height
         if delta != 0:
@@ -173,6 +186,7 @@ class Col(Layout):
             clients.extend(c.clients)
         return clients
 
+    @expose_command()
     def info(self):
         d = Layout.info(self)
         d["clients"] = []
@@ -220,7 +234,7 @@ class Col(Layout):
             for c, g in zip(self.columns, growth):
                 c.width += g
 
-    def add(self, client):
+    def add_client(self, client):
         c = self.cc
         to_add = True  # added by yobleck to ensure that existing empty columns are filled before adding new ones
         for col in self.columns:
@@ -234,7 +248,7 @@ class Col(Layout):
             if len(least) < len(c):
                 c = least
         self.current = self.columns.index(c)
-        c.add(client)
+        c.add_client(client)
 
     def remove(self, client):
         remove = None
@@ -348,11 +362,13 @@ class Col(Layout):
         if idx > 0:
             return self.columns[idx - 1].focus_last()
 
-    def cmd_toggle_split(self):
+    @expose_command()
+    def toggle_split(self):
         self.cc.toggle_split()
         self.group.layout_all()
 
-    def cmd_left(self):
+    @expose_command()
+    def left(self):
         if self.wrap_focus_columns:
             if len(self.columns) > 1:
                 self.current = (self.current - 1) % len(self.columns)
@@ -361,7 +377,8 @@ class Col(Layout):
                 self.current = self.current - 1
         self.group.focus(self.cc.cw, True)
 
-    def cmd_right(self):
+    @expose_command()
+    def right(self):
         if self.wrap_focus_columns:
             if len(self.columns) > 1:
                 self.current = (self.current + 1) % len(self.columns)
@@ -375,7 +392,8 @@ class Col(Layout):
             return self.wrap_focus_rows
         return self.wrap_focus_stacks
 
-    def cmd_up(self):
+    @expose_command()
+    def up(self):
         col = self.cc
         if self.want_wrap(col):
             if len(col) > 1:
@@ -385,7 +403,8 @@ class Col(Layout):
                 col.current_index -= 1
         self.group.focus(col.cw, True)
 
-    def cmd_down(self):
+    @expose_command()
+    def down(self):
         col = self.cc
         if self.want_wrap(col):
             if len(col) > 1:
@@ -395,7 +414,8 @@ class Col(Layout):
                 col.current_index += 1
         self.group.focus(col.cw, True)
 
-    def cmd_next(self):
+    @expose_command()
+    def next(self):
         if self.cc.split and self.cc.current < len(self.cc) - 1:
             self.cc.current += 1
         elif self.columns:
@@ -404,7 +424,8 @@ class Col(Layout):
                 self.cc.current = 0
         self.group.focus(self.cc.cw, True)
 
-    def cmd_previous(self):
+    @expose_command()
+    def previous(self):
         if self.cc.split and self.cc.current > 0:
             self.cc.current -= 1
         elif self.columns:
@@ -413,7 +434,8 @@ class Col(Layout):
                 self.cc.current = len(self.cc) - 1
         self.group.focus(self.cc.cw, True)
 
-    def cmd_shuffle_left(self):
+    @expose_command()
+    def shuffle_left(self):
         cur = self.cc
         client = cur.cw
         if client is None:
@@ -421,13 +443,13 @@ class Col(Layout):
         if self.current > 0:
             self.current -= 1
             new = self.cc
-            new.add(client, cur.heights[client])
+            new.add_client(client, cur.heights[client])
             cur.remove(client)
             if len(cur) == 0:
                 self.remove_column(cur)
         elif len(cur) > 1:
             new = self.add_column(True)
-            new.add(client, cur.heights[client])
+            new.add_client(client, cur.heights[client])
             cur.remove(client)
             self.current = 0
             self.remove_extra_cols()
@@ -435,7 +457,8 @@ class Col(Layout):
             return
         self.group.layout_all()
 
-    def cmd_shuffle_right(self):
+    @expose_command()
+    def shuffle_right(self):
         cur = self.cc
         client = cur.cw
         if client is None:
@@ -443,14 +466,14 @@ class Col(Layout):
         if self.current + 1 < len(self.columns):
             self.current += 1
             new = self.cc
-            new.add(client, cur.heights[client])
+            new.add_client(client, cur.heights[client])
             cur.remove(client)
             # if len(cur) == 0:  # removed by yobleck to allow moving window to the right
             #     self.remove_column(cur)
             self.remove_extra_cols()
         elif len(cur) > 1:
             new = self.add_column()
-            new.add(client, cur.heights[client])
+            new.add_client(client, cur.heights[client])
             cur.remove(client)
             self.current = len(self.columns) - 1
             self.remove_extra_cols()
@@ -458,17 +481,20 @@ class Col(Layout):
             return
         self.group.layout_all()
 
-    def cmd_shuffle_up(self):
+    @expose_command()
+    def shuffle_up(self):
         if self.cc.current_index > 0:
             self.cc.shuffle_up()
             self.group.layout_all()
 
-    def cmd_shuffle_down(self):
+    @expose_command()
+    def shuffle_down(self):
         if self.cc.current_index + 1 < len(self.cc):
             self.cc.shuffle_down()
             self.group.layout_all()
 
-    def cmd_grow_left(self):
+    @expose_command()
+    def grow_left(self):
         if self.current > 0:
             if self.columns[self.current - 1].width > self.grow_amount:
                 self.columns[self.current - 1].width -= self.grow_amount
@@ -480,7 +506,8 @@ class Col(Layout):
                 self.cc.width -= self.grow_amount
                 self.group.layout_all()
 
-    def cmd_grow_right(self):
+    @expose_command()
+    def grow_right(self):
         if self.current + 1 < len(self.columns):
             if self.columns[self.current + 1].width > self.grow_amount:
                 self.columns[self.current + 1].width -= self.grow_amount
@@ -492,7 +519,8 @@ class Col(Layout):
                 self.columns[self.current - 1].width += self.grow_amount
                 self.group.layout_all()
 
-    def cmd_grow_up(self):
+    @expose_command()
+    def grow_up(self):
         col = self.cc
         if col.current > 0:
             if col.heights[col[col.current - 1]] > self.grow_amount:
@@ -505,7 +533,8 @@ class Col(Layout):
                 col.heights[col.cw] -= self.grow_amount
                 self.group.layout_all()
 
-    def cmd_grow_down(self):
+    @expose_command()
+    def grow_down(self):
         col = self.cc
         if col.current + 1 < len(col):
             if col.heights[col[col.current + 1]] > self.grow_amount:
@@ -518,7 +547,8 @@ class Col(Layout):
                 col.heights[col.cw] -= self.grow_amount
                 self.group.layout_all()
 
-    def cmd_normalize(self):
+    @expose_command()
+    def normalize(self):
         for col in self.columns:
             for client in col:
                 col.heights[client] = 100
@@ -530,12 +560,14 @@ class Col(Layout):
         self.current = dst
         self.group.layout_all()
 
-    def cmd_swap_column_left(self):
+    @expose_command()
+    def swap_column_left(self):
         src = self.current
         dst = src - 1 if src > 0 else len(self.columns) - 1
         self.swap_column(src, dst)
 
-    def cmd_swap_column_right(self):
+    @expose_command()
+    def swap_column_right(self):
         src = self.current
         dst = src + 1 if src < len(self.columns) - 1 else 0
         self.swap_column(src, dst)
