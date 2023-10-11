@@ -41,6 +41,7 @@ from floating_window_snapping import move_snap_window
 import internal_modifications as int_mod
 from layout.columns_tweak import Col
 import py_repl
+# import voice_control
 import quick_settings_menu as qsm
 # import window_preview
 
@@ -59,7 +60,7 @@ def vsync_toggle(x):
 
 
 def toggle_bar(qtile, *args):  # Helper function for bar visibility
-    qtile.cmd_hide_show_bar(*args)
+    qtile.hide_show_bar(*args)  # cmd_
 
 
 def parse(text):  # Function for editing displayed wm_name
@@ -108,20 +109,20 @@ def startup_once_stuff():
     # TODO: move all this stuff to a bash script to improve startup times?
     # configure monitors via nvidia settings. requires mod1+control+r to fix layout
     # qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
-    qtile.cmd_spawn("nvidia-settings --assign CurrentMetaMode='DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}, DPY-3: nvidia-auto-select @2560x1440 +0+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}'")
+    qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}, DPY-3: nvidia-auto-select @2560x1440 +0+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}'")
     # qtile.cmd_spawn("xrandr --output DP-0 --primary --mode 2560x1440 --rate 165 --output DP-2 --mode 2560x1440 --rate 60 --left-of DP-0")
     # loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
-    qtile.cmd_spawn("picom")  # compositor for window animations and transparency
+    qtile.spawn("picom")  # compositor for window animations and transparency
 
-    qtile.cmd_spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1")  # mouse no accel
-    qtile.cmd_spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Speed\" 0")  # mouse speed
-    qtile.cmd_spawn("setxkbmap -option ctrl:nocaps")
+    qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1")  # mouse no accel
+    qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Speed\" 0")  # mouse speed
+    qtile.spawn("setxkbmap -option ctrl:nocaps")
 
-    qtile.cmd_spawn("xset s off -dpms")
-    qtile.cmd_spawn("xautolock -time 10 -locker /home/yobleck/.config/qtile/locker.sh")  # lock screen and monitors off
+    qtile.spawn("xset s off -dpms")
+    qtile.spawn("xautolock -time 10 -locker /home/yobleck/.config/qtile/locker.sh")  # lock screen and monitors off
     # TODO: cant manually override while video is playing. pass through argument to shell script? or disable xautolock in manual script?
 
-    qtile.cmd_spawn("/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style")  # , "-s", "gtk2" #qt5ct located in .bash_profile
+    qtile.spawn("/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style")  # , "-s", "gtk2" #qt5ct located in .bash_profile
     # polkit gui agent for kate, pamac etc #requires kdesu grrrr
     # recompiled for Qt themes TODO: color schemes
     # https://stackoverflow.com/questions/6740333/can-i-run-a-qt-application-with-a-specific-theme #https://cmake.org/runningcmake/
@@ -138,7 +139,7 @@ def startup_once_stuff():
 
     # qtile.cmd_spawn("kill -2 kglobalaccel5")
     # above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
-    qtile.cmd_spawn("kill -2 kwalletd5")
+    # qtile.cmd_spawn("kill -2 kwalletd5")
     # subprocess.run(["sleep", "2"]) #Needed?
     # TODO plasma-dolphin.service?
 
@@ -151,7 +152,7 @@ def startup_once_stuff():
 @hook.subscribe.startup
 def startup_stuff():
     # subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
-    qtile.cmd_spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
+    qtile.spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
     int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
 
 
@@ -183,7 +184,7 @@ def startup_complete_stuff():
 
 @hook.subscribe.shutdown
 def shutdown_stuff():
-    qtile.cmd_spawn("pkill mocp")
+    qtile.spawn("pkill mocp")
     pass
 
 
@@ -211,14 +212,14 @@ def client_managed_stuff(window):
         if window.window.get_name() == "Calendar":
             # log_test("passed Cal name test")
             # qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193") # NOTE wmctrl uninstalled
-            qtile.cmd_spawn("xdotool search \"Calendar\" windowsize 378 252 windowmove 2185 1164")
+            qtile.spawn("xdotool search \"Calendar\" windowsize 378 252 windowmove 2185 1164")
             # below doesnt respect different widgets
             # window.cmd_set_position_floating(2333, 1221)
             # window.cmd_set_size_floating(225, 193)
 
         elif window.window.get_name() == "Audio Volume":
             # time.sleep(0.5);
-            qtile.cmd_spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
+            qtile.spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
 
     elif window.window.get_wm_class()[0] == "subl" and window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
         # log_test("sublime detected")
@@ -332,6 +333,7 @@ keys = [
     Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
     Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
     Key(["control", "mod1"], "p", lazy.spawn("spectacle"), desc="launch spectacle"),
+    Key(["control", "mod1"], "z", lazy.spawn("/home/yobleck/ai/llama/training_data/screenshot.sh"), desc="launch spectacle"),  # remove once done with llama
     Key([mod], "Print", lazy.spawn("spectacle"), desc="launch spectacle"),
     # mod + . for emoji selector
 
@@ -359,7 +361,7 @@ groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
 groups.append(Group("2nd", layout="col", matches=[Match(wm_class=["dolphin"])]))  # , spawn="python /home/yobleck/fah/fah_stats.py"
 groups.append(Group("F@H", layout="col", spawn=[terminal, "FAHControl"]))
 # groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
-groups.append(Group("vg", matches=[Match(wm_class=["Steam", "MultiMC", "hl2_linux"])]))  # TODO: add video game match rules 
+groups.append(Group("vg", matches=[Match(wm_class=["steam", "MultiMC", "hl2_linux"])]))  # TODO: add video game match rules 
 
 g_list = {"web": "a", "2nd": "s", "F@H": "d", "vg": "f"}  # "htop": "f",
 for g in g_list.items():
@@ -396,7 +398,7 @@ layouts = [
 widget_defaults = dict(
     font="Hack",
     fontsize=12,
-    foreground="#00aa00",
+    foreground="#00aa00",  # steam green #4C5844
     padding=3,
 )
 extension_defaults = widget_defaults.copy()
@@ -406,9 +408,9 @@ screens = [
     Screen(  # 1920x1080_144
         bottom=bar.Bar(
             [
-                widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
-                                                      "Button4": lambda: qtile.cmd_prev_layout(),
-                                                      "Button5": lambda: qtile.cmd_next_layout()}
+                widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.prev_layout(),
+                                                      "Button4": lambda: qtile.prev_layout(),
+                                                      "Button5": lambda: qtile.next_layout()}
                                      ),
                 widget.TextBox("|"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
@@ -448,9 +450,9 @@ screens = [
     Screen(  # 2560x1440_60
         bottom=bar.Bar(
             [
-                widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.cmd_prev_layout(),
-                                                      "Button4": lambda: qtile.cmd_prev_layout(),
-                                                      "Button5": lambda: qtile.cmd_next_layout()}
+                widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.prev_layout(),
+                                                      "Button4": lambda: qtile.prev_layout(),
+                                                      "Button5": lambda: qtile.next_layout()}
                                      ),
                 widget.TextBox("|"),
                 widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
@@ -460,17 +462,17 @@ screens = [
                                 unfocused_border="#004400"
                                 ),
                 widget.Moc(foreground="#00aa00", update_interval=2,
-                           mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("mocp -s"),
-                                            "Button4": lambda: qtile.cmd_spawn("mocp -r"),
-                                            "Button5": lambda: qtile.cmd_spawn("mocp -f"),
-                                            "Button8": lambda: qtile.cmd_spawn("mocp -k -2"),
-                                            "Button9": lambda: qtile.cmd_spawn("mocp -k 2"),
-                                            }
-                           ),
+                          mouse_callbacks={"Button3": lambda: qtile.spawn("mocp -s"),
+                                           "Button4": lambda: qtile.spawn("mocp -r"),
+                                           "Button5": lambda: qtile.spawn("mocp -f"),
+                                           "Button8": lambda: qtile.spawn("mocp -k -2"),
+                                           "Button9": lambda: qtile.spawn("mocp -k 2"),
+                                           }
+                          ),
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
-                              mouse_callbacks={"Button3": lambda: qtile.cmd_spawn("plasmawindowed org.kde.plasma.volume")}
+                              mouse_callbacks={"Button3": lambda: qtile.spawn("plasmawindowed org.kde.plasma.volume")}
                               ),
                 widget.Clock(format='%a %H:%M', fontsize=18, update_interval=30,
                              mouse_callbacks={"Button1": int_mod.simple_calendar}
@@ -494,6 +496,7 @@ screens = [
                 #     qsm.Button(text="Bluetooth", icon_path="~/.config/qtile/icons/network-bluetooth.svg", is_toggle=True, grid_pos=(2,1)),
                 #     ]),
                 widget.Spacer(),
+                # voice_control.VoiceControl(),
                 py_repl.REPL(text="", fontsize=18,
                              win_foreground="#00aa00", win_pos=(400, 400), win_size=(800, 800),
                              win_font="Hack", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
@@ -502,13 +505,13 @@ screens = [
                 # TODO kde system settings icon
                 widget.TextBox(" "),
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/htop.svg",
-                             mouse_callbacks={"Button1": lambda: qtile.cmd_spawn(f"{terminal} btm")}
+                             mouse_callbacks={"Button1": lambda: qtile.spawn(f"{terminal} btm")}
                              ),
                 widget.CPU(format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
                 widget.ThermalSensor(foreground="#00aa00", tag_sensor="Tctl", threshold=80, update_interval=2),
                 widget.CPUGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
                 widget.Memory(format="| Mem: {MemUsed:05.0f}{mm}B", update_interval=2),
-                widget.Net(format="| Net: {down} ↓↑ {up}", update_interval=2),
+                widget.Net(format="| Net: {down:3.0f}{down_suffix:<2} ↓↑ {up:3.0f}{up_suffix:<2}", update_interval=2),
                 widget.NetGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", threshold=80, update_interval=2),
             ],
@@ -570,6 +573,8 @@ floating_layout = layout.Floating(float_rules=[
     Match(title="Event Tester"),
     Match(title="Default - Wine desktop"),
     Match(title="SAF"),
+    Match(title="800x600 - Wine desktop"),
+    Match(wm_class="explorer.exe"),
 ],
     no_reposition_rules=[  # TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
         Match(wm_class="FAHStats"),
