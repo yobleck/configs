@@ -33,6 +33,7 @@ class lock_screen:  # TODO turn this into an extension?
         self.text_pos: tuple = text_pos
 
         self.popups: list = []
+        self.surface = None
 
     def lock(self, unused_qtile) -> None:
         if not self.popups:
@@ -43,11 +44,16 @@ class lock_screen:  # TODO turn this into an extension?
                     width=scrn.width, height=scrn.height,
                     font=self.font, font_size=self.font_size, border="#ff00ff", border_width=0, opacity=1, wrap=True))
 
-                self.popups[x].unhide()
-
                 self.popups[x].win.process_button_click = self._click_popup
                 self.popups[x].win.process_key_press = self._key_press
                 self.popups[x].win.process_pointer_enter = self._enter_window
+
+                if self.image_path:  # TODO move this to __init__?
+                    img = images.Img.from_path(self.image_path)
+                    # TODO resize by width or height or only use svg?
+                    img.resize(height=self.popups[x].height, width=self.popups[x].width)
+                    self.surface, _ = images._decode_to_image_surface(img.bytes_img, img.width, img.height)
+                self.popups[x].unhide()
             self._actually_draw()
 
     def _actually_draw(self) -> None:
@@ -56,12 +62,8 @@ class lock_screen:  # TODO turn this into an extension?
         for x in range(len(qtile.screens)):
             self.popups[x].clear()
             # draw image
-            if self.image_path:
-                img = images.Img.from_path(self.image_path)
-                # TODO resize by width or height or only use svg
-                img.resize(height=self.popups[x].height, width=self.popups[x].width)
-                surf, _ = images._decode_to_image_surface(img.bytes_img, img.width, img.height)
-                self.popups[x].draw_image(surf, 0, 0)
+            if self.surface:
+                self.popups[x].draw_image(self.surface, 0, 0)
 
             # draw text
             self.popups[x].text = self.time + self.prompt + self.user_input  # TODO replace user_input with len(user_input) * "*"
