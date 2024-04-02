@@ -1,6 +1,8 @@
 """Pseudo screen locker that uses Qtile a popup window"""
 
 from datetime import datetime
+import os
+import threading
 
 from libqtile import qtile, images
 from libqtile.popup import Popup
@@ -34,6 +36,13 @@ class lock_screen:  # TODO turn this into an extension?
 
         self.popups: list = []
         self.surface = None
+        if os.path.exists(os.path.expanduser(self.image_path)):  # TODO move this to __init__?
+            img = images.Img.from_path(self.image_path)
+            # TODO resize by width or height or only use svg, or let user decide?
+            img.resize(height=1440, width=2560)  # TODO don't hard code this
+            self.surface, _ = images._decode_to_image_surface(img.bytes_img, img.width, img.height)
+
+        self.timer: _RepeatTimer | None = None
 
     def lock(self, unused_qtile) -> None:
         if not self.popups:
@@ -48,13 +57,15 @@ class lock_screen:  # TODO turn this into an extension?
                 self.popups[x].win.process_key_press = self._key_press
                 self.popups[x].win.process_pointer_enter = self._enter_window
 
-                if self.image_path:  # TODO move this to __init__?
-                    img = images.Img.from_path(self.image_path)
-                    # TODO resize by width or height or only use svg?
-                    img.resize(height=self.popups[x].height, width=self.popups[x].width)
-                    self.surface, _ = images._decode_to_image_surface(img.bytes_img, img.width, img.height)
                 self.popups[x].unhide()
+
             self._actually_draw()
+
+            try:
+                self.timer = _RepeatTimer(1, self._actually_draw)
+                self.timer.start()
+            except Exception as e:
+                log_test(e)
 
     def _actually_draw(self) -> None:
         # NOTE this function is slow to run and holding down a key can cause lag
@@ -72,6 +83,11 @@ class lock_screen:  # TODO turn this into an extension?
 
     def _close(self) -> None:
         """Close windows and clear variables"""
+        try:
+            self.timer.cancel()
+            self.timer = None
+        except Exception as e:
+            log_test(e)
         for x in range(len(qtile.screens)):
             self.popups[x].hide()
             self.popups[x].kill()
@@ -104,3 +120,9 @@ class lock_screen:  # TODO turn this into an extension?
 
     def _update_time(self) -> None:
         self.time = datetime.now().isoformat()
+
+
+class _RepeatTimer(threading.Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
