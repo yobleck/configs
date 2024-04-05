@@ -4,18 +4,23 @@ from datetime import datetime
 from itertools import cycle
 import os
 import threading
+# TODO installation instructions
+import time
+from typing import Any
 
 from libqtile import qtile, images
 from libqtile.popup import Popup
 
 
-def log_test(i):
+def log_test(i: Any):
     f = open("/home/yobleck/.config/qtile/qtile_log.txt", "a")
     f.write(str(i) + "\n")
     f.close()
 
 
-class lock_screen:  # TODO turn this into an extension?
+# TODO stop qtile keyboard shortcuts from working while window is open? or always force on top
+# qtile.conn.conn.core.GrabKeyboard() /usr/lib/python3.11/site-packages/xcffib/xproto.py
+class pseudo_screen_locker:  # TODO turn this into an extension?
     def __init__(
             self, image_paths: list[str] = [""], background: str = "#000000ff", foreground: str = "#ffffff",
             image_size: tuple[int, int] = (1080, 1920),  # TODO implement
@@ -39,16 +44,11 @@ class lock_screen:  # TODO turn this into an extension?
         # image related vars
         self.image_paths: list[str] = image_paths
         self.popups: list[Popup] = []  # List of popup windows. One per screen
-        # List of all images to be looped through. Not to be confused with different images being displayed on different screens
-        self.surfaces: list = []  # type images._SurfaceInfo
+        # List of all images to be looped through.
+        # Not to be confused with different images being displayed on different screens
+        self.surfaces: list = []  # type images._SurfaceInfo?
         self.loop: cycle | None = None
         self.timer: _RepeatTimer | None = None
-
-        # NOTE this takes a really long time with lots of images. try multiprocessing or caching results in pickle?
-        img_thread = threading.Thread(target=self._image_to_surfaces)
-        img_thread.start()  # for now we run in a separate thread to try and deprioritize loading
-        # img_thread.join()
-        # self._image_to_surfaces()
 
     def lock(self, unused_qtile) -> None:
         if not self.popups:
@@ -66,7 +66,6 @@ class lock_screen:  # TODO turn this into an extension?
                 self.popups[x].unhide()
 
             self._actually_draw()
-
             try:
                 self.timer = _RepeatTimer(self.update_interval, self._actually_draw)
                 self.timer.start()
@@ -92,7 +91,14 @@ class lock_screen:  # TODO turn this into an extension?
             p.draw_text(x=self.text_pos[0], y=self.text_pos[1])
             p.draw()
 
-    def _image_to_surfaces(self) -> None:
+    def load_images(self) -> None:
+        # NOTE this takes a really long time with lots of images. try caching results in pickle?
+        img_thread = threading.Thread(target=self._images_to_surfaces)
+        img_thread.start()  # for now we run in a separate thread to try and deprioritize loading
+        # img_thread.join()
+
+    def _images_to_surfaces(self) -> None:
+        time.sleep(0.1)  # deprioritize thread?
         for img in self.image_paths:
             if os.path.exists(os.path.expanduser(img)):
                 i_temp = images.Img.from_path(img)
@@ -107,7 +113,7 @@ class lock_screen:  # TODO turn this into an extension?
     def _close(self) -> None:
         """Close windows and clear variables"""
         try:
-            self.timer.cancel()
+            self.timer.cancel()  # breaks if lock immediately after qtile loads
             self.timer = None
         except Exception as e:
             log_test(e)
@@ -135,7 +141,7 @@ class lock_screen:  # TODO turn this into an extension?
             self._user_input = self._user_input[:-1]
         elif 31 < keycode < 3900:  # most actually typeable characters in this range?
             self._user_input += chr(keycode)
-        # self._actually_draw()
+        # self._actually_draw()  # TODO update text slow without this
 
     def _enter_window(self, *args) -> None:
         """Handle mouse enter window to focus."""
