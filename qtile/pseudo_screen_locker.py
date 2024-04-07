@@ -8,7 +8,7 @@ import threading
 import time
 from typing import Any
 
-from libqtile import qtile, images
+from libqtile import hook, images, qtile
 from libqtile.popup import Popup
 
 
@@ -18,9 +18,7 @@ def log_test(i: Any):
     f.close()
 
 
-# TODO stop qtile keyboard shortcuts from working while window is open? or always force on top
-# qtile.conn.conn.core.GrabKeyboard() /usr/lib/python3.11/site-packages/xcffib/xproto.py
-class pseudo_screen_locker:  # TODO turn this into an extension?
+class PseudoScreenLocker:  # TODO turn this into an extension?
     def __init__(
             self, image_paths: list[str] = [""], background: str = "#000000ff", foreground: str = "#ffffff",
             image_size: tuple[int, int] = (1080, 1920),  # TODO implement
@@ -29,11 +27,12 @@ class pseudo_screen_locker:  # TODO turn this into an extension?
             update_interval: float = 1) -> None:
 
         self.background: str = background
+        self._backup_key_binds: dict = {}
+
+        # text related vars
         self.foreground: str = foreground
         self.font: str = font
         self.font_size: int = font_size
-
-        # text related vars
         self._time: str = datetime.now().isoformat()
         self.update_interval = update_interval
         self.pass_prompt: str = "\nFake Password:"
@@ -48,6 +47,7 @@ class pseudo_screen_locker:  # TODO turn this into an extension?
         # Not to be confused with different images being displayed on different screens
         self.surfaces: list = []  # type images._SurfaceInfo?
         self.loop: cycle | None = None
+        self.temp_loop_counter: int = 0
         self.timer: _RepeatTimer | None = None
 
     def lock(self, unused_qtile) -> None:
@@ -71,20 +71,23 @@ class pseudo_screen_locker:  # TODO turn this into an extension?
                 self.timer.start()
             except Exception as e:
                 log_test(e)
+            self._backup_key_binds = qtile.keys_map
+            # log_test(self._backup_key_binds)
+            qtile.keys_map = {}
 
-    def _actually_draw(self) -> None:
+    def _actually_draw(self, update_image: bool = True) -> None:
         # NOTE this function cant update all screens at the same time so they will appear out of sync
         # threading or multiprocessing?
         self._update_time()
-        temp_loop_counter: int = 0
-        if self.surfaces:
-            temp_loop_counter = next(self.loop)  # once per draw cycle so image is the same on every screen
+        if self.surfaces and self.temp_loop_counter:  # don't update background image for typing updates
+            self.temp_loop_counter = next(self.loop)  # only update image once per update_interval so screens are the same
+
         for p in self.popups:
             p.clear()
             # draw image
             if self.surfaces:
                 # pass
-                p.draw_image(self.surfaces[temp_loop_counter], 0, 0)
+                p.draw_image(self.surfaces[self.temp_loop_counter], 0, 0)
 
             # draw text
             p.text = self._time + self.pass_prompt + self._user_input  # TODO replace user_input with len(user_input) * "*"
@@ -112,6 +115,7 @@ class pseudo_screen_locker:  # TODO turn this into an extension?
 
     def _close(self) -> None:
         """Close windows and clear variables"""
+        qtile.keys_map = self._backup_key_binds  # TODO sometimes doesn't work. WHY?
         try:
             self.timer.cancel()  # breaks if lock immediately after qtile loads
             self.timer = None
@@ -141,7 +145,12 @@ class pseudo_screen_locker:  # TODO turn this into an extension?
             self._user_input = self._user_input[:-1]
         elif 31 < keycode < 3900:  # most actually typeable characters in this range?
             self._user_input += chr(keycode)
-        # self._actually_draw()  # TODO update text slow without this
+        self._actually_draw(update_image=False)
+
+    def fire_hook(self) -> None:
+        """qtile cmd-obj -o cmd -f fire_user_hook -a 'custom_hook_name'"""
+        # log_test("hook fired")
+        self.lock(qtile)
 
     def _enter_window(self, *args) -> None:
         """Handle mouse enter window to focus."""
