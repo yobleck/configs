@@ -25,6 +25,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # WARNING TODO CMD_ PREFIX IS BEING REMOVED
+import re
 from typing import List  # noqa: F401
 # import subprocess
 # import time
@@ -35,14 +36,17 @@ from libqtile.lazy import lazy
 # from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
 import accessibility as ac
-import desktop_icons
+# import desktop_icons
 from fah_widget import fah
 from floating_window_snapping import move_snap_window
 import internal_modifications as int_mod
 from layout.columns_tweak import Col
+import pseudo_screen_locker as psl
 import py_repl
 # import voice_control
-import quick_settings_menu as qsm
+# import quick_settings_menu as qsm
+# import screen_locker
+import start_menu
 # import window_preview
 
 
@@ -96,6 +100,20 @@ def tasklist_kill():  # kill current window when mouse middle clicks on tasklist
             break
 
 
+temp_path: str = "/home/yobleck/Pictures/transparency/video/2/"
+temp_file_list: list[str] = []
+for x in range(1, 11):  # make sure to change this to the number of frames + 1
+    temp_file_list.append(f"{temp_path}{x}_out.png")
+sc = psl.PseudoScreenLocker(
+    image_paths=["/home/yobleck/Pictures/tjbxp4i12v5a1_transparent2.png"],
+    # image_paths=["/home/yobleck/Pictures/834420.png", "/home/yobleck/Pictures/834420_bonfire.png"],
+    # image_paths=["/home/yobleck/Pictures/transparency/group/Untitled2.png"],
+    # image_paths=temp_file_list,
+    font="Hack", font_size=24, foreground="#00aa00", background="#000000aa", text_pos=(1100, 780),
+    update_interval=1.0)
+
+
+
 # window preview stuff
 # try:
 #     win_pre = window_preview.window_preview()
@@ -123,25 +141,23 @@ def startup_once_stuff():
     # TODO: cant manually override while video is playing. pass through argument to shell script? or disable xautolock in manual script?
 
     qtile.spawn("/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style")  # , "-s", "gtk2" #qt5ct located in .bash_profile
+    # qtile.spawn("/usr/lib/mate-polkit/polkit-mate-authentication-agent-1")
     # polkit gui agent for kate, pamac etc #requires kdesu grrrr
     # recompiled for Qt themes TODO: color schemes
     # https://stackoverflow.com/questions/6740333/can-i-run-a-qt-application-with-a-specific-theme #https://cmake.org/runningcmake/
 
     # subprocess.Popen(["export", "QT_QPA_PLATFORMTHEME=\"qt5ct\""]); #see ~/.bash_profile
 
-    qtile.cmd_spawn("/usr/lib/kdeconnectd")  # kdeconnect daemon
-    qtile.cmd_spawn("kdeconnect-indicator")  # kdeconnect taskbar widget icon
+    qtile.spawn("/usr/lib/kdeconnectd")  # kdeconnect daemon
+    qtile.spawn("kdeconnect-indicator")  # kdeconnect taskbar widget icon
 
-    qtile.cmd_spawn("mocp -S")
-    # qtile.cmd_spawn("xbindkeys")
+    qtile.spawn("mocp -S")
     # qtile.cmd_spawn("gwe --hide-window")
     # qtile.cmd_spawn("python /home/yobleck/.moc/mpris2_bridge/moc-mpris/moc_mpris.py")  # allows moc to be controlled by other media keys/kdeconnect
 
     # qtile.cmd_spawn("kill -2 kglobalaccel5")
     # above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
     # qtile.cmd_spawn("kill -2 kwalletd5")
-    # subprocess.run(["sleep", "2"]) #Needed?
-    # TODO plasma-dolphin.service?
 
     # qtile.cmd_spawn("kill -2 gwe");
 
@@ -158,28 +174,7 @@ def startup_stuff():
 
 @hook.subscribe.startup_complete
 def startup_complete_stuff():
-    # try:
-    #     # from libqtile import qtile
-    #     from libqtile.popup import Popup
-    #     from xcffib.xproto import StackMode
-    #     popup = Popup(qtile, background="#00000000", foreground="#00ff00",
-    #                   x=50, y=50, width=200, height=100,
-    #                   font="Sans", font_size=12, border="#ff0000", border_width=1,
-    #                   opacity=1, wrap=True)
-    #     # place window. stackmode below is required to ensure the window stays below all other windows
-    #     # replaces the default self.popup.place() function
-    #     popup.win.window.configure(x=popup.x, y=popup.y, width=popup.width, height=popup.height, stackmode=StackMode.Below)
-    #     popup.win.paint_borders(popup.border, popup.border_width)
-    #     popup.unhide()
-    #     # draw text
-    #     popup.text = f"Put your formatted text here\nNext line\nsuper+ctrl+q=quit thing"
-    #     popup.draw_text(x=4, y=2)  # change text starting position in window
-    #     popup.draw()
-    #     # comment out this line to make mouse left click close the window
-    #     popup.win.process_button_click = lambda *args: None
-    # except Exception as e:
-    #     log_test(e)
-    pass
+    sc.load_images()  # process images after qtile finishes loading to avoid startup lag
 
 
 @hook.subscribe.shutdown
@@ -187,6 +182,10 @@ def shutdown_stuff():
     qtile.spawn("pkill mocp")
     pass
 
+
+@hook.subscribe.user("psl_lock_hook")
+def psl_hook():
+    sc.fire_hook()
 
 # @hook.subscribe.client_focus
 # def client_focus_stuff(window):
@@ -207,17 +206,7 @@ def shutdown_stuff():
 @hook.subscribe.client_managed
 def client_managed_stuff(window):
     if window.window.get_wm_class()[0] == "plasmawindowed":
-        # log_test(window.window.get_property("WM_NAME", type="STRING", unpack=str))
-        # time.sleep(0.5);
-        if window.window.get_name() == "Calendar":
-            # log_test("passed Cal name test")
-            # qtile.cmd_spawn("wmctrl -r Calendar -e 0,2332,1223,225,193") # NOTE wmctrl uninstalled
-            qtile.spawn("xdotool search \"Calendar\" windowsize 378 252 windowmove 2185 1164")
-            # below doesnt respect different widgets
-            # window.cmd_set_position_floating(2333, 1221)
-            # window.cmd_set_size_floating(225, 193)
-
-        elif window.window.get_name() == "Audio Volume":
+        if window.window.get_name() == "Audio Volume":
             # time.sleep(0.5);
             qtile.spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
 
@@ -231,28 +220,8 @@ def client_managed_stuff(window):
         window.kill()
         # pass
 
-    # elif window.group.layout.name == "stack":
-    #     # filter out floating windows including FAHStats
-    #     w = [w for w in window.group.windows if (False, False) == (w.floating, w.minimized)]
-    #     # log_test(w)
-    #     if len(w) < 2 and window.floating == False:
-    #         window.group.layout.cmd_client_to_stack(1)
-
     # take screenshot of window for preview when window created
     # win_pre.screenshot(window.wid, 2)
-
-
-# def kill_window(qtile):
-#     try:
-#         if qtile.current_window.window.get_wm_class()[0] == "kitty":
-#             log_test("key press")
-#             qtile.cmd_spawn("xdotool sleep 0.08 key --clearmodifiers ctrl+l")
-#             # qtile.cmd_spawn("sh /home/yobleck/.config/qtile/test.sh")
-#         else:
-#             pass
-#             # qtile.current_window.kill()
-#     except Exception as e:
-#         log_test(e)
 
 
 # __KEY BINDS__
@@ -260,7 +229,7 @@ mod = "mod4"  # TODO change to meta
 terminal = "kitty"  # guess_terminal()
 
 keys = [
-    # Key([mod], "o", lazy.function(kill_window), desc="test function"),
+    Key([mod], "o", lazy.function(sc.lock), desc="test function"),
     # Key([mod, "shift"], "o", lazy.function(ac.play_audio, "mod o"), desc="test function 2"),
 
     # Cycle through windows
@@ -357,13 +326,12 @@ keys = [
 
 # __GROUPS AND LAYOUTS__
 groups = []
-groups.append(Group("web", matches=[Match(wm_class=["mpc-qt", "firefox"])]))
-groups.append(Group("2nd", layout="col", matches=[Match(wm_class=["dolphin"])]))  # , spawn="python /home/yobleck/fah/fah_stats.py"
-groups.append(Group("F@H", layout="col", spawn=[terminal, "FAHControl"]))
-# groups.append(Group("htop", spawn="ksysguard"))  # --style gtk2
-groups.append(Group("vg", matches=[Match(wm_class=["steam", "MultiMC", "hl2_linux"])]))  # TODO: add video game match rules 
+groups.append(Group("1st", matches=[Match(wm_class=re.compile(r"^(mpc\-qt|mpv)$"))], screen_affinity=0))  # 
+groups.append(Group("2nd", layout="col", matches=[Match(wm_class=re.compile(r"^(dolphin-emu)$"))], screen_affinity=1))  # , spawn="python /home/yobleck/fah/fah_stats.py"
+groups.append(Group("3rd", layout="col"))  # , spawn=[terminal, "FAHControl"]
+groups.append(Group("vg", matches=[Match(wm_class=re.compile(r"^(steam|polymc|hl2_linux|steam_app_1888160)$"))]))  # TODO: add video game match rules 
 
-g_list = {"web": "a", "2nd": "s", "F@H": "d", "vg": "f"}  # "htop": "f",
+g_list = {"1st": "a", "2nd": "s", "3rd": "d", "vg": "f"}
 for g in g_list.items():
     keys.extend([
         Key([mod], g[1], lazy.group[g[0]].toscreen(toggle=False),
@@ -372,22 +340,13 @@ for g in g_list.items():
             desc="move focused window to group " + g[0]),
     ])
 
-# log_test("\n\n\ncreating layouts\n");
+
 layouts = [
     layout.Max(),
     # layout.Stack(num_stacks=2, border_focus="#00aa00"),
-    # Try more layouts by unleashing below layouts.
-    # layout.Bsp(),
     # layout.Columns(border_focus="#00aa00", border_focus_stack="#00aa00", border_normal="#000000", border_width=1),
     Col(border_focus="#00aa00", border_focus_stack="#00aa00", border_normal="#000000", border_width=1, fair=True, min_columns=2),
-    # layout.Matrix(),
-    # layout.MonadTall(),
-    # layout.MonadWide(),
-    # layout.RatioTile(),
-    # layout.Tile(),
     # layout.TreeTab(previous_on_rm=True, active_bg="#00aa00"),
-    # layout.VerticalTile(),
-    # layout.Zoomy(),
     # layout.BrowserTab(), #these are just me yobleck messing around
     # layout.BrowserTab2(), #ditto
 ]
@@ -405,7 +364,7 @@ extension_defaults = widget_defaults.copy()
 
 
 screens = [
-    Screen(  # 1920x1080_144
+    Screen(  # 2560x1440_165
         bottom=bar.Bar(
             [
                 widget.CurrentLayout(mouse_callbacks={"Button3": lambda: qtile.prev_layout(),
@@ -429,9 +388,10 @@ screens = [
                 widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100),
                 widget.Systray(),
                 widget.CheckUpdates(custom_command="pamac checkupdates -q; echo -n",  # custom_command_modify = (lambda x: x/2-1),
-                                    execute="GTK_THEME=Breeze-Dark pamac-manager", update_interval="600", display_format="U:{updates}",
+                                    execute=terminal, update_interval=600, display_format="U:{updates}",
                                     no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#880000",
                                     ),  # TODO error_string when added in next update
+                # execute="GTK_THEME=Breeze-Dark pamac-manager"
                 widget.Clock(format='%Y-%m-%dT%H:%M', fontsize=18, update_interval=60,
                              mouse_callbacks={"Button1": int_mod.simple_calendar}
                              ),
@@ -443,9 +403,6 @@ screens = [
         ),
         wallpaper="/home/yobleck/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
-        # width=1920,
-        # height=1080,
-        # x=2560,
     ),
     Screen(  # 2560x1440_60
         bottom=bar.Bar(
@@ -462,13 +419,13 @@ screens = [
                                 unfocused_border="#004400"
                                 ),
                 widget.Moc(foreground="#00aa00", update_interval=2,
-                          mouse_callbacks={"Button3": lambda: qtile.spawn("mocp -s"),
-                                           "Button4": lambda: qtile.spawn("mocp -r"),
-                                           "Button5": lambda: qtile.spawn("mocp -f"),
-                                           "Button8": lambda: qtile.spawn("mocp -k -2"),
-                                           "Button9": lambda: qtile.spawn("mocp -k 2"),
-                                           }
-                          ),
+                           mouse_callbacks={"Button3": lambda: qtile.spawn("mocp -s"),
+                                            "Button4": lambda: qtile.spawn("mocp -r"),
+                                            "Button5": lambda: qtile.spawn("mocp -f"),
+                                            "Button8": lambda: qtile.spawn("mocp -k -2"),
+                                            "Button9": lambda: qtile.spawn("mocp -k 2"),
+                                            }
+                           ),
                 widget.Volume(volume_down_command="pulseaudio-ctl down",
                               volume_up_command="pulseaudio-ctl up",
                               mute_command="pulseaudio-ctl mute",
@@ -484,8 +441,15 @@ screens = [
         ),
         top=bar.Bar(
             [
-                widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
-                             mouse_callbacks={"Button1": int_mod.simple_start_menu}),  #  \ue9f1
+                # widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
+                #              mouse_callbacks={"Button1": int_mod.simple_start_menu}),
+                start_menu.StartMenu(filename="/home/yobleck/.config/qtile/icons/24x24.png",  #  \ue9f1
+                                     win_pos=(0, 24), win_bordercolor="#aa00aa",
+                                     win_opacity=0.9, win_font="Hack", win_fontsize=10,
+                                     win_icon_paths=["/home/yobleck/.config/qtile/icons/system-shutdown.svg",
+                                                     "/home/yobleck/.config/qtile/icons/system-reboot.svg",
+                                                     "/home/yobleck/.config/qtile/icons/system-log-out.svg"],
+                                     ),
                 fah.FaH(username="yobleck", json=True, is_popup=True, popup_struct=(5, 1330, 160, 80, "#00aa00", 1), update_interval=600),
                 # qsm.Menu(button_list=[
                 #     qsm.Button(text="Brightness Down", icon_path="~/.config/qtile/icons/low-brightness.svg", is_toggle=False, grid_pos=(0,0)),
@@ -520,8 +484,6 @@ screens = [
         ),
         wallpaper="/home/yobleck/Pictures/black.png",
         wallpaper_mode="fill",
-        # width=2560,
-        # height=1440,
     ),
 ]
 
@@ -539,8 +501,9 @@ mouse = [
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 follow_mouse_focus = True
-bring_front_click = False
+bring_front_click = True
 cursor_warp = False
+floats_kept_above = True
 floating_layout = layout.Floating(float_rules=[
     # Run the utility of `xprop` to see the wm class and name of an X client.
     *layout.Floating.default_float_rules,
@@ -575,6 +538,8 @@ floating_layout = layout.Floating(float_rules=[
     Match(title="SAF"),
     Match(title="800x600 - Wine desktop"),
     Match(wm_class="explorer.exe"),
+    Match(wm_class="gamescope"),
+    Match(wm_class="steamwebhelper"),
 ],
     no_reposition_rules=[  # TODO: https://github.com/qtile/qtile/blob/579d189b244efea590dd2447110516cd413f10de/libqtile/layout/floating.py#L274
         Match(wm_class="FAHStats"),
