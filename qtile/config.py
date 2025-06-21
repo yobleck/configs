@@ -75,8 +75,8 @@ def toggle_bar(qtile, *args):  # Helper function for bar visibility
 
 def parse(text):  # Function for editing displayed wm_name
     for string in [" - YouTube", " \u2014 Mozilla Firefox", " \u2014 Konsole", "  \u2014 Kate",
-                   " \u2014 Dolphin", " - Chromium", " - Thunar",
-                   "Media Player Classic Qute Theater - ", " (UNREGISTERED)", "yobleck@yobleck-pc: ",
+                   " \u2014 Dolphin", " - Chromium", " - Thunar", " - Sublime Text (UNREGISTERED)",
+                   "Media Player Classic Qute Theater - ", "yobleck@yobleck: ",
                    " - mpv"]:
         text = text.replace(string, "")
     return text
@@ -157,10 +157,9 @@ def startup_once_stuff():
     # loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
     qtile.spawn("picom")  # compositor for window animations and transparency
 
-    qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1")  # mouse no accel
+    qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1, 0")  # mouse no accel
     qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Speed\" 0")  # mouse speed
-    qtile.spawn("setxkbmap -option ctrl:nocaps")
-    qtile.spawn("xrdb -merge /home/yobleck/.Xresources")
+    qtile.spawn("setxkbmap -option ctrl:nocaps -option compose:ralt")
 
     qtile.spawn("xset s off -dpms")
     qtile.spawn("xautolock -time 10 -locker /home/yobleck/.config/qtile/locker.sh")  # lock screen and monitors off
@@ -177,8 +176,9 @@ def startup_once_stuff():
     qtile.spawn("/usr/bin/kdeconnectd")  # kdeconnect daemon
     qtile.spawn("kdeconnect-indicator")  # kdeconnect taskbar widget icon
 
-    qtile.spawn("mocp -S")
+    # qtile.spawn("mocp -S")  # old and broken. recompile from scratch? find new player?
     qtile.spawn("xsetroot -cursor_name left_ptr")
+    qtile.spawn("xrdb -merge /home/yobleck/.Xresources")
     # qtile.cmd_spawn("gwe --hide-window")
     # qtile.cmd_spawn("python /home/yobleck/.moc/mpris2_bridge/moc-mpris/moc_mpris.py")  # allows moc to be controlled by other media keys/kdeconnect
 
@@ -197,7 +197,7 @@ def startup_stuff():
     # subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
     # log_test("change cursor size?")
     # log_test(os.environ)
-    qtile.spawn("xsetroot -cursor_name left_ptr")  # change mouse to breeze cursor
+    qtile.spawn("xsetroot -cursor_name left_ptr", shell=True)  # change mouse to breeze cursor
     # log_test(f"x: {x}")
     int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
 
@@ -239,8 +239,8 @@ def client_managed_stuff(window):
     #     if window.window.get_name() == "Audio Volume":
     #         # time.sleep(0.5);
     #         qtile.spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
-    if window.window.get_wm_class()[0] == "pavucontrol":
-        qtile.spawn("xdotool search \"Volume Control\" windowsize 600 600 windowmove 1959 816")
+    if window.window.get_wm_class()[0] == "pavucontrol-qt":
+        qtile.spawn("xdotool search \"Volume Control\" windowsize 600 600 windowmove 1958 814")
 
     elif window.window.get_wm_class()[0] == "sublime_text" and window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
         # log_test("sublime detected")
@@ -318,11 +318,11 @@ keys = [
 
     # Media control
     Key([], "XF86AudioRaiseVolume",
-        lazy.spawn("pulseaudio-ctl up"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
+        lazy.spawn("pamixer -i 5"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
     Key([], "XF86AudioLowerVolume",
-        lazy.spawn("pulseaudio-ctl down"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
+        lazy.spawn("pamixer -d 5"), lazy.spawn("paplay /home/yobleck/Music/volume_change/mc_pop/audio-volume-change.oga")),
     Key([], "XF86AudioMute",
-        lazy.spawn("pulseaudio-ctl mute")),
+        lazy.spawn("pamixer -t")),
     Key([], "XF86AudioPlay",
         lazy.spawn("playerctl play-pause")),
     Key([], "XF86AudioNext",
@@ -332,9 +332,10 @@ keys = [
 
     # Run various programs
     # nnn envars  $NNN_TRASH=1 $NNN_PLUG='p:mocplay;k:kdeconnect;d:!dragon-drag-and-drop -x $nnn*;x:dnd'
-    Key(["control", "mod1"], "e", lazy.spawn(f"{terminal} nnn -H -J -T v -A"), desc="launch file manager"),  # spacefm -n, dolphin, nnn
+    # Key(["control", "mod1"], "e", lazy.spawn(f"{terminal} nnn -H -J -T v -A"), desc="launch nnn"),
+    Key(["control", "mod1"], "e", lazy.spawn("thunar"), desc="launch thunar"),
     Key(["control", "mod1"], "r", lazy.spawn(terminal), desc="launch terminal emulator"),
-    Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
+    # Key(["control", "mod1"], "g", lazy.spawn("chromium"), desc="launch chromium"),
     Key(["control", "mod1"], "h", lazy.spawn(f"{terminal} btm"), desc="launch process manager"),
     Key(["control", "mod1"], "c", lazy.spawn(f"{terminal} --name qalc --title qalc \
         -o remember_window_size=no -o initial_window_width=500 -o initial_window_height=500 qalc"), desc="launch qalculate"),
@@ -371,9 +372,9 @@ groups = []
 groups.append(Group("1st", matches=[Match(wm_class=re.compile(r"^(mpc\-qt|mpv)$"))], screen_affinity=0))  #
 groups.append(Group("2nd", layout="col", matches=[Match(wm_class=re.compile(r"^(dolphin-emu)$"))], screen_affinity=1))  # , spawn="python /home/yobleck/fah/fah_stats.py"
 groups.append(Group("3rd", layout="col"))  # , spawn=[terminal, "FAHControl"]
-groups.append(Group("vg", matches=[Match(wm_class=re.compile(r"^(steam|polymc|hl2_linux|steam_app_1888160)$"))]))  # TODO: add video game match rules 
-
-g_list = {"1st": "a", "2nd": "s", "3rd": "d", "vg": "f"}
+groups.append(Group("vg", matches=[Match(wm_class=re.compile(r"^(steam|polymc|hl2_linux|steam_app_1888160)$"))]))  # TODO: add video game match rules 
+# 
+g_list = {"1st": "a", "2nd": "s", "3rd": "d", "vg": "f"}
 for g in g_list.items():
     keys.extend([
         Key([mod], g[1], lazy.group[g[0]].toscreen(toggle=False),
@@ -425,8 +426,8 @@ screens = [
                 # widget.WindowTabs(parse_text=parse),
                 widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100),
                 widget.Systray(),
-                widget.CheckUpdates(custom_command="pamac checkupdates -q; echo -n",  # custom_command_modify = (lambda x: x/2-1),
-                                    execute=terminal + " --hold pamac checkupdates", update_interval=600, display_format="U:{updates}",
+                widget.CheckUpdates(distro="Arch_checkupdates",  # custom_command_modify = (lambda x: x/2-1),
+                                    execute=terminal + " --hold checkupdates", update_interval=1200, display_format="U:{updates}",
                                     no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#880000",
                                     ),  # TODO error_string when added in next update
                 # execute="GTK_THEME=Breeze-Dark pamac-manager"
@@ -468,10 +469,13 @@ screens = [
                 widget.Mpris2(poll_interval=2, width=400, no_metadata_text="No metadata",
                               playing_text="Playing", paused_text="Paused",
                               ),
-                widget.Volume(volume_down_command="pulseaudio-ctl down",
-                              volume_up_command="pulseaudio-ctl up",
-                              volume_app="pavucontrol",
-                              mute_command="pulseaudio-ctl mute",
+                widget.Volume(get_volume_command="pamixer --get-volume-human",
+                              volume_down_command="pamixer -d 5",
+                              volume_up_command="pamixer -i 5",
+                              volume_app="pavucontrol-qt",
+                              mute_command="pamixer -t",
+                              check_mute_command="pamixer --get-mute",
+                              check_mute_string="true",
                               update_interval=0.5,  # TODO inc/dec/mute volume should trigger update function
                               ),
                 widget.Clock(format="%a %H:%M", fontsize=18, update_interval=30,
@@ -486,7 +490,7 @@ screens = [
             [
                 # widget.Image(filename="/home/yobleck/.config/qtile/icons/24x24.png",
                 #              mouse_callbacks={"Button1": int_mod.simple_start_menu}),
-                start_menu.StartMenu(filename="/home/yobleck/.config/qtile/icons/24x24.png",  #  \ue9f1
+                start_menu.StartMenu(filename="/home/yobleck/.config/qtile/icons/arch_green.png",  #  \ue9f1
                                      win_pos=(0, 24), win_bordercolor="#aa00aa",
                                      win_opacity=0.9, win_font="Hack", win_fontsize=10,
                                      win_icon_paths=["/home/yobleck/.config/qtile/icons/system-shutdown.png",
@@ -518,7 +522,9 @@ screens = [
                 widget.ThermalSensor(foreground="#00aa00", tag_sensor="Tctl", threshold=80, update_interval=2),
                 widget.CPUGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
                 widget.Memory(format="| Mem: {MemUsed:02.1f}{mm}B", measure_mem="G", update_interval=2),
-                widget.DF(format="| df: {uf}{m}/{r:.0f}%", warn_space=100, update_interval=30, visible_on_warn=False),
+                # widget.DF(format="| df: {uf}{m}/{r:.0f}%", warn_space=100, update_interval=30, visible_on_warn=False),
+                widget.TextBox("| df:"),
+                widget.GenPollCommand(cmd="df -H / | tail -n 1 |  awk '{print $4}'", shell=True, update_interval=30),
                 widget.Net(format="| Net: {down:3.0f}{down_suffix:<2} ↓↑ {up:3.0f}{up_suffix:<2}", update_interval=2),
                 widget.NetGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", threshold=80, update_interval=2),
