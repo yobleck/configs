@@ -1,31 +1,38 @@
 # XONSH WEBCONFIG START
 
 # text that appears on new line before command
-$PROMPT = '[{env_name}{BOLD_GREEN}{user} {cwd}]{BOLD_BLUE}{prompt_end} '
+$PROMPT_FIELDS["prompt_end"] = "$"
+$PROMPT = '{BOLD_GREEN}[{WHITE}{env_name}{BOLD_GREEN}{user} {cwd}]{BOLD_BLUE}{prompt_end} '
 # {curr_branch: {}}{NO_COLOR} {BOLD_BLUE}{prompt_end}{NO_COLOR}    {branch_color}
 
 $XONSH_STYLE_OVERRIDES["completion-menu"] = "bg:#2f2f2f #60b48a"
 
 # general oneliner aliases
-aliases["cls"] = "clear"
+aliases["cls"] = "echo -e '\033[3J' && clear"  # clear_all
+aliases["ls"] = "ls -a --color"
 # aliases["gwe"] = "flatpak run com.leinardi.gwe" #not needed now has aur
 aliases["waifu2x"] = "waifu2x-ncnn-vulkan"
 aliases["kiwix"] = "env XDG_CONFIG_HOME=/usr/share/color-schemes/Breath.colors kiwix-desktop"
 aliases["ds2"] = "sudo -E python /home/yobleck/old_projects/ds2_mouse_fix/mouse.py"
 aliases["yt"] = "python /home/yobleck/yt-py-ncurses/youtube_main.py"
-aliases["twitch"] = "python /home/yobleck/twitch-py-cli/main.py" #cd /home/yobleck/twitch-py-cli;
+aliases["twitch"] = "python /home/yobleck/twitch-py-cli/main.py"  # cd /home/yobleck/twitch-py-cli;
 aliases["songrater"] = "python /home/yobleck/Music/song_rater/song_rater.py"
 aliases["hack_text"] = "python /home/yobleck/old_projects/hack_text.py"
-aliases["startup"]= "sudo echo start; bash /home/yobleck/fah/fah_stats.sh &; sudo -E python /home/yobleck/desktop_scroll/scroll.py &"
+aliases["startup"] = "sudo echo start; bash /home/yobleck/fah/fah_stats.sh &; sudo -E python /home/yobleck/desktop_scroll/scroll.py &"
 aliases["flash"] = "cd /home/yobleck/flashpoint/Flashpoint_8.1_Infinity/Launcher/; ./flashpoint-launcher"
 aliases["mount_ht"] = "sshfs htpc@10.0.0.36:/home/htpc/storage /home/yobleck/ht/storage"
-aliases["unmount_ht"] = "fusermount -u /home/yobleck/ht/storage"
-aliases["lock"] = "i3lock --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\"" #--color 001100cc
-aliases["weather"] = "curl wttr.in/Williston+VT" #"curl v2.wttr.in/Williston+VT" only supports metric
+aliases["unmount_ht"] = "fusermount3 -u /home/yobleck/ht/storage"
+aliases["mount_ht2"] = "sshfs htpc@10.0.0.36:/home/htpc/storage2 /home/yobleck/ht/storage2"
+aliases["unmount_ht2"] = "fusermount3 -u /home/yobleck/ht/storage2"
+# aliases["lock"] = "i3lock --pass-media-keys --timecolor=00ff00 --datecolor=00ff00 --blur 5 --clock --timestr=\"%H:%M\" --datestr=\"%Y-%m-%d\""  # --color 001100cc
+aliases["weather"] = "curl wttr.in/Williston+VT"  # "curl v2.wttr.in/Williston+VT" only supports metric
 aliases["diff"] = "diff --color"
 aliases["black"] = "black --diff --color"
-aliases["git"] = "xonsh ~/Videos/ascii_rick/git_gud.xsh"
+# aliases["git"] = "xonsh ~/Videos/ascii_rick/git_gud.xsh"
 aliases["sublime"] = "subl"
+aliases["bottom"] = "btm"
+aliases["icat"] = "kitty +kitten icat"
+aliases["cat"] = "bat -n"
 # aliases["FAHClient"] = "cd /home/yobleck/fah; FAHClient"
 
 # fix ls color issue
@@ -36,20 +43,23 @@ aliases["gtav_radio"] = "cd /home/yobleck/gtav_radio; python gtav_radio.py"
 from xonsh.commands_cache import predict_false
 __xonsh__.commands_cache.threadable_predictors['python'] = predict_false
 
-aliases["mocs"] = "python /home/yobleck/.moc/sort/sorter.py"
+aliases["mocs"] = "python /home/yobleck/.moc/sort/sort2.py"
 __xonsh__.commands_cache.threadable_predictors['mocs'] = lambda args: False
 
-$NNN_PLUG="p:mocplay;d:dragndrop"; $NNN_TRASH=1; $LC_COLLATE="C"; #NNN_SSHFS
-aliases["nnn"] = "nnn -H"; #breaks nnn. shows keycodes on screen
+$NNN_PLUG = "p:mocplay;k:kdeconnect;d:!dragon-drag-and-drop -x $nnn*;x:dnd"
+$NNN_TRASH=1; $LC_COLLATE="en_US.utf8"; #NNN_SSHFS
+aliases["nnn"] = "nnn -H -J -T v -A"  # breaks nnn. shows keycodes on screen
 __xonsh__.commands_cache.threadable_predictors['nnn'] = lambda args: False
 
+$EDITOR = "nano"
+$VISUAL = "micro"
 
 # these functions dont clear the screen correctly maybe still use bash watch function
 def cpuclock():
     import sys, time  # have to use python time so ctrl C works
-    while(True):
+    while True:
         # this redraws cleaner than clear(cls)   "\033[F"=go to beginning of previous line
-        print("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F")
+        print("\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F\033[F")
         echo "temperature:"
         print(int($(cat /sys/class/hwmon/hwmon1/temp1_input))/1000) #change temp1 to temp2 (Tctl to Tdie)
         # measure Icore and Isoc with curr1-2    measure Vcore and Vsoc with in0-1     both in milliamps
@@ -73,17 +83,17 @@ def gpuinfo():
 
 
 def FAHClient_filter():
-    if($PWD != "/home/yobleck/fah"):
+    if ($PWD != "/home/yobleck/fah"):
         cd "/home/yobleck/fah"
         print("wrong folder")
         sleep 1
     $[FAHClient]
-    #else:
-        #$[FAHClient]
+    # else:
+        # $[FAHClient]
 aliases["fahclient"] = FAHClient_filter
 
 
-def fahthrottle(per):
+def fahthrottle_gpu(per):
     [$[cpulimit -p @(x) -l @(per)] for x in [$(pgrep FahCore_21).strip("\n"), $(pgrep FahCore_22).strip("\n")] if(x)]
     notify-send -u critical "GPU WU Done"
 
@@ -97,11 +107,11 @@ def timer():
     t1 = time.perf_counter()
     while True:
         t2 = time.perf_counter() - t1
-        hour = int(t2/3600)
-        minute = int((t2-(hour*3600))/60)
-        sec = int(t2-(hour*3600)-(minute*60))
+        hour = int(t2 / 3600)
+        minute = int((t2 - (hour * 3600)) / 60)
+        sec = int(t2 - (hour * 3600) - (minute * 60))
         ms = t2 - int(t2)
-        print(f" {hour:02d}:{minute:02d}:{sec:02d}{str(ms)[1:4]}" , end="\r")  # TODO hide cursor
+        print(f" {hour:02d}:{minute:02d}:{sec:02d}{str(ms)[1:4]}", end="\r")  # TODO hide cursor
 
 
 def alarm(amount):
@@ -115,11 +125,39 @@ def alarm(amount):
 # import local python modules
 import sys
 sys.path.insert(0,"")
-$PATH.append("/home/yobleck/.nimble/bin")
+# $PATH.append("/home/yobleck/.nimble/bin")
 
 
 def test_func():
     notify-send "test"
+
+
+def search_path(string):
+    """search $PATH for file/dir with string in name"""
+    for p in $PATH:
+        print("path:", p)
+        for f in $(ls -a1 @(p)).split("\n"):
+            # echo @(f) | grep @(string)  # really slow
+            if string in f:
+                print("", f.strip("\n"))
+
+
+def open_comics(fi):
+    """Test doc string"""
+    import json
+    with open(fi, "r") as f:
+        d = json.load(f)
+        for b in d["children"][1]["children"][3]["children"]:
+            firefox --new-tab @(b["uri"])
+            sleep 1
+
+
+def fix_mouse():
+    xinput --set-prop "pointer:Logitech G602" "libinput Accel Profile Enabled" 0, 1, 0
+    xinput --set-prop "pointer:Logitech G602" "libinput Accel Speed" 0
+
+# cls  # clear: /usr/lib/python3.10/site-packages/prompt_toolkit/eventloop/utils.py:118: DeprecationWarning: There is no current event loop return asyncio.get_event_loop_policy().get_event_loop()
+     # message from screen on start up
 
 
 # sys.path.append("/home/yobleck/old_projects/");
