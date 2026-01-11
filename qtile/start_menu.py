@@ -46,15 +46,15 @@ class StartMenu(image.Image):
             self.popup = Popup(qtile, background=self.win_background, foreground=self.win_foreground,
                                x=self.win_pos[0], y=self.win_pos[1],
                                width=self.win_size[0], height=self.win_size[1],
-                               font=self.win_font, font_size=self.win_fontsize, fontshadow=self.win_fontshadow,
+                               font=self.win_font, fontsize=self.win_fontsize, fontshadow=self.win_fontshadow,
                                border=self.win_bordercolor, border_width=self.win_borderwidth,
                                opacity=self.win_opacity, wrap=True)
 
             self.popup.layout.markup = False  # TODO PR to add this to popup options
             self.popup.layout.width = self.popup.width  # actually enforce line wrap. see PR above
 
-            self.popup.text = "Shutdown  Reboot  Logoff"
-            self.popup.draw_text(x=2, y=self.popup.height - self.popup.font_size - 2)  # TODO don't hard code this
+            self.popup.layout.text = "Shutdown  Reboot  Logoff"
+            self.popup.draw_text(x=2, y=self.popup.height - self.popup.fontsize - 2)  # TODO don't hard code this
             self.popup.draw()
 
             if type(self.win_icon_paths) is list and all(type(wip) is str for wip in self.win_icon_paths):
@@ -62,7 +62,7 @@ class StartMenu(image.Image):
                 [i.resize(height=self.popup.height) for i in icon_list]
                 surface_list: list = []
                 for x in icon_list:
-                    s, _ = images._decode_to_image_surface(x.bytes_img, x.width, x.height)
+                    s, _ = images.get_cairo_surface(x.bytes_img, x.width, x.height)  # formerly _decode_to_image_surface
                     surface_list.append(s)
                 [self.popup.draw_image(s, int(self.popup.width / len(surface_list)) * i, -5) for i, s in enumerate(surface_list)]
             else:
