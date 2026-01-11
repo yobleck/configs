@@ -5,7 +5,7 @@ In the config.py file put:
 import pseudo_screen_locker as psl
 sc = psl.PseudoScreenLocker(
     image_paths=["/path/to/image.png"],  # make sure this is a string in a list
-    font="sans", font_size=24, foreground="#00aa00", background="#000000aa", text_pos=(1100, 780),
+    font="sans", fontsize=24, foreground="#00aa00", background="#000000aa", text_pos=(1100, 780),
     key_bind=(["mod4"], "l"),
     update_interval=1.0)
 # or you can put `Key([mod], "l", lazy.function(sc.lock), desc="lock screen"),` in your config keys list
@@ -29,6 +29,7 @@ def log_test(i: Any):
     f = open("/home/yobleck/.config/qtile/qtile_log.txt", "a")
     f.write(str(i) + "\n")
     f.close()
+# BUG waking monitors up with ctrl key cause windows to lose focus
 
 
 class PseudoScreenLocker:  # TODO turn this into a configurable
@@ -37,7 +38,7 @@ class PseudoScreenLocker:  # TODO turn this into a configurable
     def __init__(
             self, image_paths: list[str] = [""], background: str = "#000000ff", foreground: str = "#ffffff",
             image_size: tuple[int, int] = (1080, 1920),  # TODO implement
-            font: str = "sans", font_size: int = 16,
+            font: str = "sans", fontsize: int = 16,
             fake_password: str = "", text_pos: tuple = (0, 0),
             key_bind: tuple[list[str], str] | None = None,
             update_interval: float = 1) -> None:
@@ -55,7 +56,7 @@ class PseudoScreenLocker:  # TODO turn this into a configurable
         # text related vars
         self.foreground: str = foreground
         self.font: str = font
-        self.font_size: int = font_size
+        self.fontsize: int = fontsize
         self._time: str = datetime.now().isoformat()
         self.update_interval = update_interval
         self.pass_prompt: str = "\nFake Password:"
@@ -91,7 +92,7 @@ class PseudoScreenLocker:  # TODO turn this into a configurable
                     qtile, background=self.background, foreground=self.foreground,
                     x=scrn.x, y=scrn.y,
                     width=scrn.width, height=scrn.height,
-                    font=self.font, font_size=self.font_size, border="#ff00ff", border_width=0, opacity=1, wrap=True))
+                    font=self.font, fontsize=self.fontsize, border="#ff00ff", border_width=0, opacity=1, wrap=True))
 
                 self.popups[x].win.process_button_click = self._click_popup
                 self.popups[x].win.process_key_press = self._key_press
@@ -125,7 +126,7 @@ class PseudoScreenLocker:  # TODO turn this into a configurable
                 p.draw_image(self.surfaces[self._temp_loop_counter], 0, 0)
 
             # draw text
-            p.text = self._time + self.pass_prompt + len(self._user_input) * "*"
+            p.layout.text = self._time + self.pass_prompt + len(self._user_input) * "*"
             p.draw_text(x=self.text_pos[0], y=self.text_pos[1])
             p.draw()
 
