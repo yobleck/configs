@@ -4,7 +4,7 @@ from functools import partial
 import shlex
 import subprocess
 
-from libqtile import qtile, images, hook
+from libqtile import qtile, images
 from libqtile.popup import Popup
 from libqtile.widget import base
 from xcffib.xproto import StackMode
@@ -50,7 +50,7 @@ class xdg_desktop_icon:
         subprocess.Popen(shlex.split(self.cmd))
 
 
-class desktop_icons:
+class desktop_icons:  # TODO turn this into an extension?
     def __init__(self, icons: list):
         self.icons = []
         for i in icons:  # ensure type correctness
@@ -61,13 +61,13 @@ class desktop_icons:
         for e, i in enumerate(self.icons):
             self.popups.append(Popup(qtile, background="#00000000", foreground="#00aa00", x=i.x, y=i.y, width=i.size, height=i.size,
                             font="Noto Mono", font_size=12, border="#00ffff", border_width=2, opacity=1, wrap=True))
-            # TODO ensure that window are always in the back and cant steal focus
 
-            #self.popups[e].place()
             # place window. stackmode below is required to ensure the windows stay below all other windows
+            # replaces the default self.popups[e].place() function
             self.popups[e].win.window.set_property("_NET_WM_STATE", (343,))  # "_NET_WM_STATE_BELOW" = (343,)
-            self.popups[e].win.window.configure(x=i.x, y=i.y, width=i.size, height=i.size, stackmode=StackMode.Below)
-            self.popups[e].win.paint_borders("#00ffff", 2)
+            self.popups[e].win.window.configure(x=self.popups[e].x, y=self.popups[e].y,
+                                                width=self.popups[e].width, height=self.popups[e].height, stackmode=StackMode.Below)
+            self.popups[e].win.paint_borders(self.popups[e].border, self.popups[e].border_width)
             self.popups[e].unhide()
 
             # draw text
@@ -78,7 +78,7 @@ class desktop_icons:
             # draw image
             img = images.Img.from_path(i.img_path)
             img.resize(height=self.popups[e].height-self.popups[e].font_size)
-            surf, _ = images._decode_to_image_surface(img.bytes_img, img.width, img.height)
+            surf, _ = images.get_cairo_surface(img.bytes_img, img.width, img.height)
             self.popups[e].draw_image(surf, 0, 0)
 
             #self.popups[e].win.process_pointer_leave = partial(self.kill_popup, k=e)
@@ -94,6 +94,7 @@ class desktop_icons:
         elif button == 3:
             self.popups[k].hide()
             self.popups[k].kill()
+            self.popups.remove(k)
 
     def toggle_icons(self):
         pass  # TODO hide unhide icons based on active group or keybind etc.
@@ -113,4 +114,3 @@ class app_tray(base._TextBox):
 
     def b_press(self, x, y, button):
         pass
-
