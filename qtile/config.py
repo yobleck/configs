@@ -32,7 +32,7 @@ from typing import List  # noqa: F401
 # import time
 
 from libqtile import bar, layout, widget, extension, hook, qtile
-from libqtile.config import Click, Drag, Group, Key, Match, Screen  # , KeyChord
+from libqtile.config import Click, Drag, Group, InvertMatch, Key, Match, MatchAll, Screen  # , KeyChord
 from libqtile.lazy import lazy
 # from libqtile.utils import guess_terminal  # , send_notification #used for popup testing
 
@@ -115,27 +115,28 @@ def tasklist_minimize():  # minimize current window when mouse right clicks on t
             break
 
 
-# temp_path: str = "/home/yobleck/Pictures/transparency/video/flou/11/"  # NOTE end path with /
-# temp_file_list: list[str] = []
-# for x in range(1, 17, 1):  # make sure to change this to the number of frames + 1
-#     temp_file_list.append(f"{temp_path}{x:03d}_rembg.png")  # _out or _rembg  sometimes 00
-sc = psl.PseudoScreenLocker(
-    image_paths=["/home/yobleck/Pictures/tjbxp4i12v5a1_transparent2.png"],
-    # image_paths=["/home/yobleck/Pictures/834420.png", "/home/yobleck/Pictures/834420_bonfire.png"],
-    # image_paths=["/home/yobleck/Pictures/transparency/new_folder_2/pajama_fox_trans.png"],
-    # image_paths=temp_file_list,
-    image_size=(1440, 2560),
-    font="Hack", font_size=24, foreground="#00aa00", background="#000000aa", text_pos=(1100, 780),
-    fake_password="lock",
-    key_bind=(["mod4"], "o"),
-    update_interval=1.0)
-# sc2 = psl_im.PseudoScreenLockerIM(
-#     # image_paths=["/home/yobleck/Pictures/tjbxp4i12v5a1_transparent2.png"],
-#     # image_size=(1440, 2560),
-#     font="Hack", font_size=24, foreground="#00aa00", background="#00000000", text_pos=(1100, 780),
-#     fake_password="lock",
-#     key_bind=(["mod4"], "i"),
-#     update_interval=1.0)
+if qtile.core.info()["backend"] == "x11":
+    # temp_path: str = "/home/yobleck/Pictures/transparency/video/flou/11/"  # NOTE end path with /
+    # temp_file_list: list[str] = []
+    # for x in range(1, 17, 1):  # make sure to change this to the number of frames + 1
+    #     temp_file_list.append(f"{temp_path}{x:03d}_rembg.png")  # _out or _rembg  sometimes 00
+    sc = psl.PseudoScreenLocker(
+        image_paths=["/home/yobleck/Pictures/tjbxp4i12v5a1_transparent2.png"],
+        # image_paths=["/home/yobleck/Pictures/834420.png", "/home/yobleck/Pictures/834420_bonfire.png"],
+        # image_paths=["/home/yobleck/Pictures/transparency/new_folder_2/pajama_fox_trans.png"],
+        # image_paths=temp_file_list,
+        image_size=(1440, 2560),
+        font="Hack", fontsize=24, foreground="#00aa00", background="#000000aa", text_pos=(1100, 780),
+        fake_password="lock",
+        key_bind=(["mod4"], "o"),
+        update_interval=1.0)
+    # sc2 = psl_im.PseudoScreenLockerIM(
+    #     # image_paths=["/home/yobleck/Pictures/tjbxp4i12v5a1_transparent2.png"],
+    #     # image_size=(1440, 2560),
+    #     font="Hack", font_size=24, foreground="#00aa00", background="#00000000", text_pos=(1100, 780),
+    #     fake_password="lock",
+    #     key_bind=(["mod4"], "i"),
+    #     update_interval=1.0)
 
 
 # window preview stuff
@@ -148,56 +149,54 @@ sc = psl.PseudoScreenLocker(
 # __HOOKS__
 @hook.subscribe.startup_once
 def startup_once_stuff():
-    # TODO: move all this stuff to a bash script to improve startup times?
-    # configure monitors via nvidia settings. requires mod1+control+r to fix layout
-    # old 1080p one qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
-    # qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}, DPY-3: nvidia-auto-select @2560x1440 +0+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}'")
-    qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-4: 2560x1440_60 @2560x1440 +0+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}, DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}'")
-    # qtile.cmd_spawn("xrandr --output DP-0 --primary --mode 2560x1440 --rate 165 --output DP-2 --mode 2560x1440 --rate 60 --left-of DP-0")
-    # loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
-    qtile.spawn("picom")  # compositor for window animations and transparency
+    if qtile.core.info()["backend"] == "x11":
+        # TODO: move all this stuff to a bash script to improve startup times?
+        # configure monitors via nvidia settings. requires mod1+control+r to fix layout
+        # old 1080p one qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
+        # qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}, DPY-3: nvidia-auto-select @2560x1440 +0+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}'")
+        qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-4: 2560x1440_60 @2560x1440 +0+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}, DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}'")
+        # qtile.cmd_spawn("xrandr --output DP-0 --primary --mode 2560x1440 --rate 165 --output DP-2 --mode 2560x1440 --rate 60 --left-of DP-0")
+        # loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
+        qtile.spawn("picom")  # compositor for window animations and transparency
 
-    qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1, 0")  # mouse no accel
-    qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Speed\" 0")  # mouse speed
-    qtile.spawn("setxkbmap -option ctrl:nocaps -option compose:ralt")
+        qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Profile Enabled\" 0, 1, 0")  # mouse no accel
+        qtile.spawn("xinput --set-prop \"pointer:Logitech G602\" \"libinput Accel Speed\" 0")  # mouse speed
+        # qtile.spawn("setxkbmap -option ctrl:nocaps -option compose:ralt")
+        # moved to /etc/X11/xorg.conf.d/00-keyboard.conf also try /etc/vconsole.conf or /etc/default/keyboard
 
-    qtile.spawn("xset s off -dpms")
-    qtile.spawn("xautolock -time 10 -locker /home/yobleck/.config/qtile/locker.sh")  # lock screen and monitors off
-    # TODO: cant manually override while video is playing. pass through argument to shell script? or disable xautolock in manual script?
+        qtile.spawn("xset s off -dpms")
+        qtile.spawn("xautolock -time 10 -locker /home/yobleck/.config/qtile/locker.sh")  # lock screen and monitors off
+        # TODO: cant manually override while video is playing. pass through argument to shell script? or disable xautolock in manual script?
 
-    qtile.spawn("/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style")  # , "-s", "gtk2" #qt5ct located in .bash_profile
+        qtile.spawn("xsetroot -cursor_name left_ptr")
+        qtile.spawn("xrdb -merge /home/yobleck/.Xresources")
+
+    # BUG not working? requires kdesu?
+    # qtile.spawn("/home/yobleck/.config/qtile/polkit_dumb_style/polkit-dumb-agent-style")  # , "-s", "gtk2" #qt5ct located in .bash_profile
     # qtile.spawn("/usr/lib/mate-polkit/polkit-mate-authentication-agent-1")
+    qtile.spawn("/usr/lib/xfce-polkit/xfce-polkit")
     # polkit gui agent for kate, pamac etc #requires kdesu grrrr
     # recompiled for Qt themes TODO: color schemes
     # https://stackoverflow.com/questions/6740333/can-i-run-a-qt-application-with-a-specific-theme #https://cmake.org/runningcmake/
 
     # subprocess.Popen(["export", "QT_QPA_PLATFORMTHEME=\"qt5ct\""]); #see ~/.bash_profile
 
-    qtile.spawn("/usr/bin/kdeconnectd")  # kdeconnect daemon
-    qtile.spawn("kdeconnect-indicator")  # kdeconnect taskbar widget icon
-
+    # qtile.spawn("/usr/bin/kdeconnectd")  # kdeconnect daemon
+    # qtile.spawn("kdeconnect-indicator")  # kdeconnect taskbar widget icon
     # qtile.spawn("mocp -S")  # old and broken. recompile from scratch? find new player?
-    qtile.spawn("xsetroot -cursor_name left_ptr")
-    qtile.spawn("xrdb -merge /home/yobleck/.Xresources")
     # qtile.cmd_spawn("gwe --hide-window")
     # qtile.cmd_spawn("python /home/yobleck/.moc/mpris2_bridge/moc-mpris/moc_mpris.py")  # allows moc to be controlled by other media keys/kdeconnect
 
-    # qtile.cmd_spawn("kill -2 kglobalaccel5")
-    # above is killed and allowed to respawn so that qtile keybinds override kde stuff TODO: how to stop said kde stuff from starting
-    # qtile.cmd_spawn("kill -2 kwalletd5")
-
     # qtile.cmd_spawn("kill -2 gwe");
-
-    # TODO: plasmawindowed org.kde.plasma.mediacontroller --statusnotifier
-    # qtile.cmd_spawn("plasmawindowed org.kde.plasma.mediacontroller --statusnotifier")
 
 
 @hook.subscribe.startup
 def startup_stuff():
-    # subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
-    # log_test("change cursor size?")
-    # log_test(os.environ)
-    qtile.spawn("xsetroot -cursor_name left_ptr", shell=True)  # change mouse to breeze cursor
+    if qtile.core.info()["backend"] == "x11":
+        # subprocess.Popen(["xautolock", "-time", "10", "-locker", "/home/yobleck/.config/qtile/locker.sh"])
+        # log_test("change cursor size?")
+        # log_test(os.environ)
+        qtile.spawn("xsetroot -cursor_name left_ptr", shell=True)  # change mouse to breeze cursor
     # log_test(f"x: {x}")
     int_mod.mouse_move(qtile)  # Mouse movements over root window change screen
 
@@ -240,7 +239,7 @@ def client_managed_stuff(window):
     #         # time.sleep(0.5);
     #         qtile.spawn("xdotool search \"Audio Volume\" windowsize 500 500 windowmove 2060 916")
     if window.window.get_wm_class()[0] == "pavucontrol-qt":
-        qtile.spawn("xdotool search \"Volume Control\" windowsize 600 600 windowmove 1958 814")
+        qtile.spawn("xdotool search \"Volume Control\" windowsize 800 500 windowmove 1758 914")
 
     elif window.window.get_wm_class()[0] == "sublime_text" and window.window.get_property("WM_NAME", type="STRING", unpack=str) in [[], None, ""]:
         # log_test("sublime detected")
@@ -347,6 +346,7 @@ keys = [
     Key(["control", "mod1"], "p", lazy.spawn("flameshot gui"), desc="launch screen shot tool"),
     # Key(["control", "mod1"], "z", lazy.spawn("/home/yobleck/ai/llama/training_data/screenshot.sh"), desc="launch spectacle"),  # remove once done with llama
     Key([mod], "Print", lazy.spawn("flameshot gui"), desc="launch screen shot tool"),
+    Key([mod], "c", lazy.spawn("xdotool key Menu"), desc="menu key workaround for nuphy air 75 assistant super+c key"),
     # mod + . for emoji selector
 
     # lock screen #https://github.com/Raymo111/i3lock-color/blob/master/examples/lock.sh
@@ -427,7 +427,7 @@ screens = [
                 widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100),
                 widget.Systray(),
                 widget.CheckUpdates(distro="Arch_checkupdates",  # custom_command_modify = (lambda x: x/2-1),
-                                    execute=terminal + " --hold checkupdates", update_interval=1200, display_format="U:{updates}",
+                                    execute=terminal + " --hold checkupdates", update_interval=3600, display_format="U:{updates}",
                                     no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#880000",
                                     ),  # TODO error_string when added in next update
                 # execute="GTK_THEME=Breeze-Dark pamac-manager"
@@ -457,15 +457,15 @@ screens = [
                                 mouse_callbacks={"Button2": tasklist_kill, "Button3": tasklist_minimize},  # , "Button3": win_pre.show_preview}
                                 unfocused_border="#004400"
                                 ),
-                widget.Moc(update_interval=2,
-                           play_color="#00aa00", noplay_color="#004400",
-                           mouse_callbacks={"Button3": lambda: qtile.spawn("mocp -s"),
-                                            "Button4": lambda: qtile.spawn("mocp -r"),
-                                            "Button5": lambda: qtile.spawn("mocp -f"),
-                                            "Button8": lambda: qtile.spawn("mocp -k -2"),
-                                            "Button9": lambda: qtile.spawn("mocp -k 2"),
-                                            }
-                           ),
+                # widget.Moc(update_interval=2,
+                #            play_color="#00aa00", noplay_color="#004400",
+                #            mouse_callbacks={"Button3": lambda: qtile.spawn("mocp -s"),
+                #                             "Button4": lambda: qtile.spawn("mocp -r"),
+                #                             "Button5": lambda: qtile.spawn("mocp -f"),
+                #                             "Button8": lambda: qtile.spawn("mocp -k -2"),
+                #                             "Button9": lambda: qtile.spawn("mocp -k 2"),
+                #                             }
+                #            ),
                 widget.Mpris2(poll_interval=2, width=400, no_metadata_text="No metadata",
                               playing_text="Playing", paused_text="Paused",
                               ),
@@ -508,12 +508,12 @@ screens = [
                 #     ]),
                 widget.Spacer(),
                 # voice_control.VoiceControl(),
-                py_repl.REPL(text="", fontsize=18,
-                             win_foreground="#00aa00", win_pos=(400, 400), win_size=(800, 800),
-                             win_font="Hack", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
-                             win_opacity=0.9  # text=" PY REPL"  changed to:  and 
-                             ),
-                # TODO kde system settings icon
+                # NOTE replaced by native qtile repl command
+                # py_repl.REPL(text="", fontsize=18,
+                #              win_foreground="#00aa00", win_pos=(400, 400), win_size=(800, 800),
+                #              win_font="Hack", win_bordercolor=["#0000ff", "#0000ff", "#ffff00", "#ffff00"], win_borderwidth=4,
+                #              win_opacity=0.9  # text=" PY REPL"  changed to:  and 
+                #              ),
                 widget.TextBox(" "),
                 widget.Image(filename="/home/yobleck/.config/qtile/icons/htop.png",
                              mouse_callbacks={"Button1": lambda: qtile.spawn(f"{terminal} btm")}
@@ -524,7 +524,7 @@ screens = [
                 widget.Memory(format="| Mem: {MemUsed:02.1f}{mm}B", measure_mem="G", update_interval=2),
                 # widget.DF(format="| df: {uf}{m}/{r:.0f}%", warn_space=100, update_interval=30, visible_on_warn=False),
                 widget.TextBox("| df:"),
-                widget.GenPollCommand(cmd="df -H / | tail -n 1 |  awk '{print $4}'", shell=True, update_interval=30),
+                widget.GenPollCommand(cmd="df -H / | tail -n 1 |  awk '{print $4\"B\"}'", shell=True, update_interval=30),
                 widget.Net(format="| Net: {down:3.0f}{down_suffix:<2} ↓↑ {up:3.0f}{up_suffix:<2}", update_interval=2),
                 widget.NetGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
                 widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", threshold=80, update_interval=2),
@@ -582,6 +582,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="Xephyr"),
     Match(wm_class="Vncviewer"),
     Match(wm_class="visualboyadvance-m"),
+    Match(wm_class="mgba"),
     Match(wm_class="megasync"),
     Match(wm_class="spectacle"),  # TODO remove
     Match(title="Event Tester"),
@@ -590,7 +591,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(title="800x600 - Wine desktop"),
     Match(wm_class="explorer.exe"),
     Match(wm_class="gamescope"),
-    Match(wm_class="steamwebhelper"),
+    MatchAll(Match(wm_class="steamwebhelper"), InvertMatch(Match(title="Steam"))),
     Match(wm_class="zenity"),
     Match(wm_class="pavucontrol"),
 ],
