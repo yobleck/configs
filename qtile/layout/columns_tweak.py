@@ -93,7 +93,7 @@ class _Column(_ClientList):
 
 
 class Col(Layout):
-    """Extension of the Stack layout.
+    """Extension of the Column layout that adds Stack layout like functionality.
 
     The screen is split into columns, which can be dynamically added or
     removed.  Each column can present its windows in 2 modes: split or
