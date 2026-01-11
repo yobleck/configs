@@ -9,7 +9,7 @@ $XONSH_STYLE_OVERRIDES["completion-menu"] = "bg:#2f2f2f #60b48a"
 
 # general oneliner aliases
 aliases["cls"] = "echo -e '\033[3J' && clear"  # clear_all
-aliases["ls"] = "ls -a --color"
+aliases["ls"] = "ls -a --color=auto"
 # aliases["gwe"] = "flatpak run com.leinardi.gwe" #not needed now has aur
 aliases["waifu2x"] = "waifu2x-ncnn-vulkan"
 aliases["kiwix"] = "env XDG_CONFIG_HOME=/usr/share/color-schemes/Breath.colors kiwix-desktop"
