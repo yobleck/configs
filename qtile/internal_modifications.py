@@ -1,11 +1,11 @@
 import calendar
 from datetime import datetime
-import io
-import os
-import pty
-import subprocess
-import sys
-from importlib import metadata
+# import io
+# import os
+# import pty
+# import subprocess
+# import sys
+# from importlib import metadata
 
 from libqtile import qtile, images
 from libqtile.popup import Popup
