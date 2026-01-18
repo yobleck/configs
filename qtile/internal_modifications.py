@@ -113,6 +113,7 @@ def mouse_move(qtile):
 
 
 def simple_calendar():
+    # TODO highlight current day
     try:
         calendar.setfirstweekday(6)
         now = datetime.now()
@@ -130,30 +131,33 @@ def simple_calendar():
         popup.win.update_name()
 
         def click(x, y, button):
+            """Next month: left click, scroll down, mouse forward button.
+               Prev month: right click, scroll up, mouse back button.
+               Current month: middle click.
+            """
             try:
                 nonlocal month
                 nonlocal year
-                if button == 1:
+                if button in [1, 5, 9]:
                     month += 1
                     if month == 13:
                         month = 1
                         year += 1
-                    popup.clear()
-                    popup.layout.text = calendar.month(year, month)
-                    popup.draw_text(x=8, y=4)
-                    popup.draw()
-                elif button == 3:
+                elif button in [3, 4, 8]:
                     month -= 1
                     if month == 0:
                         month = 12
                         year -= 1
-                    popup.clear()
-                    popup.layout.text = calendar.month(year, month)
-                    popup.draw_text(x=8, y=4)
-                    popup.draw()
+                elif button == 2:
+                    now = datetime.now()
+                    month = now.month
+                    year = now.year
                 else:
-                    popup.hide()
-                    popup.kill()
+                    pass
+                popup.clear()
+                popup.layout.text = calendar.month(year, month)
+                popup.draw_text(x=8, y=4)
+                popup.draw()
             except Exception as e:
                 log_test(f"click error: {e}")
         popup.win.process_button_click = click
