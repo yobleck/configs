@@ -25,10 +25,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # WARNING TODO CMD_ PREFIX IS BEING REMOVED
-import os
+# import os
 import re
-from typing import List  # noqa: F401
 # import subprocess
+from typing import List  # noqa: F401
 # import time
 
 from libqtile import bar, layout, widget, extension, hook, qtile
@@ -38,18 +38,20 @@ from libqtile.lazy import lazy
 
 # import accessibility as ac
 # import desktop_icons
-from fah_widget import fah
-from floating_window_snapping import move_snap_window
+# from fah_widget import fah
+from floating_window_snapping import move_snap_window, center_cursor
 import internal_modifications as int_mod
 from layout.columns_tweak import Col
 import pseudo_screen_locker as psl
+import destop_fwen
 # import pseudo_screen_locker_im as psl_im
-import py_repl
+# import py_repl
 # import voice_control
 # import quick_settings_menu as qsm
-# import screen_locker
+# import screen_locker  # delete this?
 import start_menu
 # import window_preview
+# import dmenu_xyw  # delete this
 
 
 # __Helper functions__
@@ -115,13 +117,18 @@ def tasklist_minimize():  # minimize current window when mouse right clicks on t
             break
 
 
+def mpv_yt(qtile):
+    qtile.spawn("notify-send 'YT video loading...'")
+    qtile.spawn("sh /home/yobleck/.config/qtile/mpv_yt.sh")
+
+
 if qtile.core.info()["backend"] == "x11":
     # temp_path: str = "/home/yobleck/Pictures/transparency/video/flou/11/"  # NOTE end path with /
     # temp_file_list: list[str] = []
     # for x in range(1, 17, 1):  # make sure to change this to the number of frames + 1
     #     temp_file_list.append(f"{temp_path}{x:03d}_rembg.png")  # _out or _rembg  sometimes 00
     sc = psl.PseudoScreenLocker(
-        image_paths=["/home/yobleck/Pictures/tjbxp4i12v5a1_transparent2.png"],
+        image_paths=["/home/yobleck/Pictures/transparency/mc/jp.png"],
         # image_paths=["/home/yobleck/Pictures/834420.png", "/home/yobleck/Pictures/834420_bonfire.png"],
         # image_paths=["/home/yobleck/Pictures/transparency/new_folder_2/pajama_fox_trans.png"],
         # image_paths=temp_file_list,
@@ -137,6 +144,19 @@ if qtile.core.info()["backend"] == "x11":
     #     fake_password="lock",
     #     key_bind=(["mod4"], "i"),
     #     update_interval=1.0)
+
+    temp_path: str = "/home/yobleck/.config/qtile/destop_fwen/cat/idle/"  # NOTE end path with /
+    fwen_list: list[str] = []
+    for x in range(0, 8):  # make sure to change this to the number of frames + 1
+        fwen_list.append(f"{temp_path}{x}.png")
+    df = destop_fwen.DestopFwen(
+        # image_paths=["/home/yobleck/.config/qtile/destop_fwen/cat/FREE_Cat 2D Pixel Art/Sprites/IDLE.png"],
+        image_paths=fwen_list,
+        image_size=(64, 80),
+        window_pos=(2565, 1440 - 24 - 70),
+        font="Hack", fontsize=10, foreground="#00aa00", background="#00000033",
+        key_bind=(["mod4"], "i"),
+        update_interval=0.333)
 
 
 # window preview stuff
@@ -154,7 +174,7 @@ def startup_once_stuff():
         # configure monitors via nvidia settings. requires mod1+control+r to fix layout
         # old 1080p one qtile.cmd_spawn("nvidia-settings --assign \"CurrentMetaMode=DPY-2: 2560x1440_60 +0+0 {ForceCompositionPipeline=On}, DPY-0: 1920x1080_144 +2560+0 {ForceCompositionPipeline=On}\"")
         # qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}, DPY-3: nvidia-auto-select @2560x1440 +0+0 {ForceCompositionPipeline=On, ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0}'")
-        qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-4: 2560x1440_60 @2560x1440 +0+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}, DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}'")
+        # qtile.spawn("nvidia-settings --assign CurrentMetaMode='DPY-4: 2560x1440_60 @2560x1440 +0+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}, DPY-1: 2560x1440_165 @2560x1440 +2560+0 {ViewPortIn=2560x1440, ViewPortOut=2560x1440+0+0, ForceCompositionPipeline=On}'")
         # qtile.cmd_spawn("xrandr --output DP-0 --primary --mode 2560x1440 --rate 165 --output DP-2 --mode 2560x1440 --rate 60 --left-of DP-0")
         # loginctl user-status suggests put above line in /etc/X11/xinit/xserverrc
         qtile.spawn("picom")  # compositor for window animations and transparency
@@ -203,7 +223,9 @@ def startup_stuff():
 
 @hook.subscribe.startup_complete
 def startup_complete_stuff():
-    sc.load_images()  # process images after qtile finishes loading to avoid startup lag
+    if qtile.core.info()["backend"] == "x11":
+        sc.load_images()  # process images after qtile finishes loading to avoid startup lag
+        df.load_images()
 
 
 @hook.subscribe.shutdown
@@ -256,7 +278,7 @@ def client_managed_stuff(window):
 
 
 # __KEY BINDS__
-mod = "mod4"  # TODO change to meta
+mod = "mod4"  # TODO change to meta/window/super
 terminal = "kitty"  # guess_terminal()
 
 keys = [
@@ -306,9 +328,9 @@ keys = [
 
     Key([mod, "mod1"], "space", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
     # Key(["control", "mod1"], "space", lazy.spawn("krunner"), desc="launch/open krunner"),
-    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_lines=10, j4dmenu_generic=False, dmenu_font="Hack",
+    Key([mod], "p", lazy.run_extension(extension.J4DmenuDesktop(dmenu_command="/home/yobleck/.local/bin/dmenu-xyw -x 1 -y 25 -z 500",
+                                                                dmenu_lines=15, j4dmenu_generic=False, dmenu_font="Hack",
                                                                 dmenu_ignorecase=True, dmenu_bottom=True, j4dmenu_terminal=terminal))),
-
     # Key([mod, "control"], "v", lazy.spawn("sh /home/yobleck/.config/qtile/toggle_vsync.sh"), desc="toggle nvidia ForceCompositionPipeline"),
     Key([mod, "control"], "b", lazy.function(toggle_bar, "bottom"), desc="toggle bar visibility"),
     Key([mod, "control"], "t", lazy.function(toggle_bar, "top"), desc="toggle bar visibility"),
@@ -339,9 +361,12 @@ keys = [
     Key(["control", "mod1"], "c", lazy.spawn(f"{terminal} --name qalc --title qalc \
         -o remember_window_size=no -o initial_window_width=500 -o initial_window_height=500 qalc"), desc="launch qalculate"),
     Key(["control", "shift"], "Escape", lazy.spawn(f"{terminal} btm"), desc="launch task manager"),
+    # $MOZ_DISABLE_RDD_SANDBOX=1
     Key(["control", "mod1"], "f", lazy.spawn("firefox"), desc="launch Firefox"),
     Key(["control", "mod1"], "y", lazy.spawn(f"{terminal} /home/yobleck/yt_dwnld.sh"), desc="launch YouTube audio downloader"),
-    Key(["control", "mod1"], "m", lazy.spawn("sh /home/yobleck/.config/qtile/mocp_launcher.sh"), desc="launch music player"),
+    Key(["control", "mod1"], "v", lazy.function(mpv_yt), desc="play YT video in mpv"),
+    # old music player: "sh /home/yobleck/.config/qtile/mocp_launcher.sh"
+    Key(["control", "mod1"], "m", lazy.spawn(f"{terminal} /home/yobleck/synthia/synthia.py"), desc="launch music player"),
     Key(["control", "mod1"], "s", lazy.spawn("steam"), desc="launch steam"),
     Key(["control", "mod1"], "p", lazy.spawn("flameshot gui"), desc="launch screen shot tool"),
     # Key(["control", "mod1"], "z", lazy.spawn("/home/yobleck/ai/llama/training_data/screenshot.sh"), desc="launch spectacle"),  # remove once done with llama
@@ -372,7 +397,7 @@ groups = []
 groups.append(Group("1st", matches=[Match(wm_class=re.compile(r"^(mpc\-qt|mpv)$"))], screen_affinity=0))  #
 groups.append(Group("2nd", layout="col", matches=[Match(wm_class=re.compile(r"^(dolphin-emu)$"))], screen_affinity=1))  # , spawn="python /home/yobleck/fah/fah_stats.py"
 groups.append(Group("3rd", layout="col"))  # , spawn=[terminal, "FAHControl"]
-groups.append(Group("vg", matches=[Match(wm_class=re.compile(r"^(steam|polymc|hl2_linux|steam_app_1888160)$"))]))  # TODO: add video game match rules 
+groups.append(Group("vg", matches=[Match(wm_class=re.compile(r"^(steam|polymc|hl2_linux|steam_app_1888160)$"))]))  # TODO: add video game match rules
 # 
 g_list = {"1st": "a", "2nd": "s", "3rd": "d", "vg": "f"}
 for g in g_list.items():
@@ -388,7 +413,7 @@ layouts = [
     layout.Max(),
     # layout.Stack(num_stacks=2, border_focus="#00aa00"),
     # layout.Columns(border_focus="#00aa00", border_focus_stack="#00aa00", border_normal="#000000", border_width=1),
-    Col(border_focus="#00aa00", border_focus_stack="#00aa00", border_normal="#000000", border_width=1, fair=True, min_columns=2),
+    Col(border_focus="#00aa00", border_focus_stack="#00aa00", border_normal="#004400", border_width=1, fair=True, min_columns=2),
 ]
 
 
@@ -411,10 +436,11 @@ screens = [
                                                       "Button5": lambda: qtile.next_layout()}
                                      ),
                 widget.TextBox("|"),
-                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
+                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, use_mouse_wheel=False),
                 # TODO: look at source code and find out how to disable click on focused group causing switch to another group
                 widget.TextBox("|"),
-                widget.Prompt(ignore_dups_history=True),
+                #   add to 0.36
+                widget.Prompt(cursor_type="block", cursor_color="#00ff00", ignore_dups_history=True),
                 # widget.Chord(  # multi key binds but not holding all keys down at same time
                 #     chords_colors={'launch': ("#ff0000", "#ffffff"), }, name_transform=lambda name: name.upper(),
                 # ),
@@ -427,10 +453,9 @@ screens = [
                 widget.Notify(foreground="#00aa00", foreground_low="#004400", max_chars=100),
                 widget.Systray(),
                 widget.CheckUpdates(distro="Arch_checkupdates",  # custom_command_modify = (lambda x: x/2-1),
-                                    execute=terminal + " --hold checkupdates", update_interval=3600, display_format="U:{updates}",
+                                    execute=terminal + " --hold checkupdates", update_interval=7200, display_format="U:{updates}",
                                     no_update_string=" U ", colour_no_updates="#00aa00", colour_have_updates="#880000",
-                                    ),  # TODO error_string when added in next update
-                # execute="GTK_THEME=Breeze-Dark pamac-manager"
+                                    ),
                 widget.Clock(format="%Y-%m-%dT%H:%M", fontsize=18, update_interval=60,
                              mouse_callbacks={"Button1": int_mod.simple_calendar}
                              ),
@@ -438,7 +463,7 @@ screens = [
                 # widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(0)}),
             ],
             24,
-            background=["#00000000", "#00000022", "#00000055", "#00330088"],  # bar background
+            background=["#00000000", "#00000022", "#00000055", "#00440088"],  # bar background
         ),
         wallpaper="/home/yobleck/Pictures/382337_4k_dn.png",
         wallpaper_mode="fill",
@@ -451,7 +476,7 @@ screens = [
                                                       "Button5": lambda: qtile.next_layout()}
                                      ),
                 widget.TextBox("|"),
-                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True),
+                widget.GroupBox(active="#00aa00", inactive="#004400", block_highlight_text_color="#00aa00", disable_drag=True, use_mouse_wheel=False),
                 widget.TextBox("|"),
                 widget.TaskList(border="#00aa00", parse_text=parse,
                                 mouse_callbacks={"Button2": tasklist_kill, "Button3": tasklist_minimize},  # , "Button3": win_pre.show_preview}
@@ -466,6 +491,9 @@ screens = [
                 #                             "Button9": lambda: qtile.spawn("mocp -k 2"),
                 #                             }
                 #            ),
+                widget.Mpd2(host="/home/yobleck/.config/mpd/socket",
+                            no_connection="",
+                            update_interval=2),
                 widget.Mpris2(poll_interval=2, width=400, no_metadata_text="No metadata",
                               playing_text="Playing", paused_text="Paused",
                               ),
@@ -484,7 +512,7 @@ screens = [
                 # widget.CurrentScreen(mouse_callbacks={"Button1": lambda: qtile.focus_screen(1)}),
             ],
             24,
-            background=["#00000000", "#00000022", "#00000055", "#00330088"],  # bar background
+            background=["#00000000", "#00000022", "#00000055", "#00440088"],  # bar background
         ),
         top=bar.Bar(
             [
@@ -519,18 +547,18 @@ screens = [
                              mouse_callbacks={"Button1": lambda: qtile.spawn(f"{terminal} btm")}
                              ),
                 widget.CPU(format="| CPU: {load_percent:04.1f}% {freq_current}GHz", update_interval=2),
-                widget.ThermalSensor(foreground="#00aa00", tag_sensor="Tctl", threshold=80, update_interval=2),
-                widget.CPUGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
+                widget.ThermalSensor(foreground="#00aa00", tag_sensor="Tctl", threshold=85, update_interval=2),
+                widget.CPUGraph(frequency=2, fill_color="#004400", graph_color="#00aa00", line_width=2),
                 widget.Memory(format="| Mem: {MemUsed:02.1f}{mm}B", measure_mem="G", update_interval=2),
                 # widget.DF(format="| df: {uf}{m}/{r:.0f}%", warn_space=100, update_interval=30, visible_on_warn=False),
                 widget.TextBox("| df:"),
                 widget.GenPollCommand(cmd="df -H / | tail -n 1 |  awk '{print $4\"B\"}'", shell=True, update_interval=30),
                 widget.Net(format="| Net: {down:3.0f}{down_suffix:<2} ↓↑ {up:3.0f}{up_suffix:<2}", update_interval=2),
-                widget.NetGraph(frequency=2, fill_color="#00330055", graph_color="#00aa00"),
-                widget.NvidiaSensors(format="| GPU: Fan:{fan_speed}, {temp}°C", foreground="#00aa00", threshold=80, update_interval=2),
+                widget.NetGraph(frequency=2, fill_color="#004400", graph_color="#00aa00", line_width=2, start_pos="bottom"),
+                widget.NvidiaSensors(format="| GPU: Fan: {fan_speed}, {temp}°C", foreground="#00aa00", threshold=80, update_interval=2),
             ],
             24,
-            background=["#00330088", "#00000055", "#00000022", "#00000000"],
+            background=["#00440088", "#00000055", "#00000022", "#00000000"],
         ),
         wallpaper="/home/yobleck/Pictures/black.png",
         wallpaper_mode="fill",
@@ -542,10 +570,10 @@ screens = [
 # Drag floating layouts.
 mouse = [
     Drag([mod], "Button1", move_snap_window(snap_dist=20),  # lazy.window.set_position_floating(border_snapping=True, snap_dist=20),
-         start=lazy.window.get_position()),
+         start=center_cursor()),  # start=lazy.window.get_position()
     Drag([mod], "Button3", lazy.window.set_size_floating(),
          start=lazy.window.get_size()),
-    Click([mod], "Button2", lazy.window.bring_to_front())
+    Click([mod], "Button2", lazy.window.bring_to_front()),
 ]
 
 dgroups_key_binder = None
@@ -583,6 +611,7 @@ floating_layout = layout.Floating(float_rules=[
     Match(wm_class="Vncviewer"),
     Match(wm_class="visualboyadvance-m"),
     Match(wm_class="mgba"),
+    Match(wm_class="desmume"),
     Match(wm_class="megasync"),
     Match(wm_class="spectacle"),  # TODO remove
     Match(title="Event Tester"),
